@@ -25,7 +25,7 @@ function onMapClick(e) {
   const lng = e.latLng.lng();
   setPointCoords(pickingPointIndex, lat, lng);
   pickingPointIndex = null;
-  document.body.style.cursor = '';
+  map.setOptions({ draggableCursor: '' });
 }
 
 function setPointCoords(index, lat, lng) {
@@ -87,7 +87,7 @@ function addPoint() {
 
 function startPicking(index) {
   pickingPointIndex = index;
-  document.body.style.cursor = 'crosshair';
+  map.setOptions({ draggableCursor: 'crosshair' });
 }
 
 function renderPanel() {
