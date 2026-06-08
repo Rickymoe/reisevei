@@ -1,5 +1,5 @@
 const ENTUR_ENDPOINT = 'https://api.entur.io/journey-planner/v3/graphql';
-const ENTUR_CLIENT_NAME = 'isokronkart-personal';
+const ENTUR_CLIENT_NAME = 'reisevei-personal';
 
 async function graphql(query) {
   const resp = await fetch(ENTUR_ENDPOINT, {
