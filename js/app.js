@@ -177,8 +177,8 @@ async function onBeregn() {
       let stops;
       try {
         stops = await fetchStopsNearby(pt.lat, pt.lng);
-      } catch (err) {
-        showError('Entur-feil: ' + (err.message || err));
+      } catch {
+        showError('Entur er ikke tilgjengelig akkurat nå.');
         return;
       }
 
@@ -193,14 +193,9 @@ async function onBeregn() {
         (done, total) => showProgress(`Punkt ${i + 1}: beregner reisetider ${done}/${total}...`)
       );
 
-      const reachableCount = durations.filter(d => d !== null && d <= pt.minutes * 60).length;
-      console.log(`Stopp totalt: ${stops.length}, nåbare (${pt.minutes} min): ${reachableCount}`);
-      console.log('Reisetider (sek):', durations.slice(0, 10));
-
       const polygon = computeIsochrone(stops, durations, pt.minutes);
-      console.log('Polygon:', polygon);
       if (!polygon) {
-        showError(`For få nåbare stopp (${reachableCount} av ${stops.length}). Prøv lengre reisetid.`);
+        showError(`For få nåbare stopp for punkt ${i + 1}. Prøv en lengre reisetid.`);
         continue;
       }
 
