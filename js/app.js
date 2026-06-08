@@ -149,3 +149,100 @@ function showProgress(text) {
 function hideProgress() {
   document.getElementById('progress').classList.add('hidden');
 }
+
+async function onBeregn() {
+  hideError();
+
+  const activePoints = points.filter(p => p.lat !== null);
+  if (activePoints.length === 0) {
+    showError('Klikk på kartet for å sette minst ett punkt.');
+    return;
+  }
+
+  const departureInput = document.getElementById('departure-time').value;
+  if (!departureInput) {
+    showError('Sett en avgangstid.');
+    return;
+  }
+  const dateTimeISO = new Date(departureInput).toISOString();
+
+  document.getElementById('beregn-btn').disabled = true;
+  clearPolygons();
+
+  try {
+    for (let i = 0; i < activePoints.length; i++) {
+      const pt = activePoints[i];
+      showProgress(`Punkt ${i + 1}/${activePoints.length}: henter stopp...`);
+
+      let stops;
+      try {
+        stops = await fetchStopsNearby(pt.lat, pt.lng);
+      } catch {
+        showError('Entur er ikke tilgjengelig akkurat nå.');
+        return;
+      }
+
+      if (stops.length === 0) {
+        showError('Ingen kollektivstopp funnet i dette området.');
+        return;
+      }
+
+      showProgress(`Punkt ${i + 1}: beregner reisetider 0/${stops.length}...`);
+      const durations = await batchFetchDurations(
+        stops, pt.lat, pt.lng, dateTimeISO,
+        (done, total) => showProgress(`Punkt ${i + 1}: beregner reisetider ${done}/${total}...`)
+      );
+
+      const polygon = computeIsochrone(stops, durations, pt.minutes);
+      if (!polygon) {
+        showError(`For få nåbare stopp for punkt ${i + 1}. Prøv en lengre reisetid.`);
+        continue;
+      }
+
+      pt.polygon = new google.maps.Polygon({
+        paths: geoJsonToGooglePath(polygon),
+        strokeColor: pt.color,
+        strokeOpacity: 0.9,
+        strokeWeight: 2,
+        fillColor: pt.color,
+        fillOpacity: 0.15,
+        map,
+      });
+      pt._geoPolygon = polygon;
+    }
+
+    drawIntersections(activePoints);
+  } finally {
+    hideProgress();
+    document.getElementById('beregn-btn').disabled = false;
+  }
+}
+
+function clearPolygons() {
+  points.forEach(pt => {
+    if (pt.polygon) { pt.polygon.setMap(null); pt.polygon = null; }
+    if (pt.intersectionPolygon) { pt.intersectionPolygon.setMap(null); pt.intersectionPolygon = null; }
+    pt._geoPolygon = null;
+  });
+}
+
+function drawIntersections(activePoints) {
+  for (let i = 0; i < activePoints.length - 1; i++) {
+    for (let j = i + 1; j < activePoints.length; j++) {
+      const intersection = computeIntersection(
+        activePoints[i]._geoPolygon,
+        activePoints[j]._geoPolygon
+      );
+      if (!intersection) continue;
+      activePoints[i].intersectionPolygon = new google.maps.Polygon({
+        paths: geoJsonToGooglePath(intersection),
+        strokeColor: '#34a853',
+        strokeOpacity: 0.9,
+        strokeWeight: 2,
+        fillColor: '#34a853',
+        fillOpacity: 0.35,
+        map,
+      });
+    }
+  }
+}
