@@ -25,7 +25,7 @@ function onMapClick(e) {
   const lng = e.latLng.lng();
   setPointCoords(pickingPointIndex, lat, lng);
   pickingPointIndex = null;
-  map.setOptions({ draggableCursor: '' });
+  document.getElementById('map').classList.remove('picking-mode');
 }
 
 function setPointCoords(index, lat, lng) {
@@ -87,7 +87,7 @@ function addPoint() {
 
 function startPicking(index) {
   pickingPointIndex = index;
-  map.setOptions({ draggableCursor: 'crosshair' });
+  document.getElementById('map').classList.add('picking-mode');
 }
 
 function renderPanel() {
@@ -116,7 +116,8 @@ function renderPanel() {
   });
 
   const addBtn = document.getElementById('add-point-btn');
-  addBtn.disabled = points.length >= MAX_POINTS;
+  const hasUnplaced = points.some(p => p.lat === null);
+  addBtn.disabled = points.length >= MAX_POINTS || hasUnplaced;
 }
 
 function removePoint(index) {

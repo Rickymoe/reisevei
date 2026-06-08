@@ -4,6 +4,9 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
 #map { position: absolute; inset: 0; }
 
+#map.picking-mode,
+#map.picking-mode * { cursor: crosshair !important; }
+
 #panel {
   position: absolute;
   top: 16px;
