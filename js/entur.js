@@ -18,7 +18,7 @@ async function graphql(query) {
 
 async function fetchStopsNearby(lat, lng, radiusMeters = 15000, maxStops = 80) {
   const query = `{
-    stopsByRadius(latitude: ${lat}, longitude: ${lng}, radius: ${radiusMeters}, first: ${maxStops}) {
+    nearest(latitude: ${lat}, longitude: ${lng}, maximumDistance: ${radiusMeters}, maximumResults: ${maxStops}, filterByPlaceTypes: [stopPlace]) {
       edges {
         node {
           place {
@@ -35,7 +35,7 @@ async function fetchStopsNearby(lat, lng, radiusMeters = 15000, maxStops = 80) {
     }
   }`;
   const data = await graphql(query);
-  return data.stopsByRadius.edges
+  return data.nearest.edges
     .map(e => e.node.place)
     .filter(p => p && p.latitude && p.longitude);
 }
