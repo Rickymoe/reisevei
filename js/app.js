@@ -177,8 +177,8 @@ async function onBeregn() {
       let stops;
       try {
         stops = await fetchStopsNearby(pt.lat, pt.lng);
-      } catch {
-        showError('Entur er ikke tilgjengelig akkurat nå.');
+      } catch (err) {
+        showError('Entur-feil: ' + (err.message || err));
         return;
       }
 
