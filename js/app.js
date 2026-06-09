@@ -102,6 +102,8 @@ function addPoint() {
     color: POINT_COLORS[index],
     label: 'Klikk på kartet...',
   });
+  document.getElementById('result-btn').classList.add('hidden');
+  document.getElementById('result-panel').classList.add('hidden');
   renderPanel();
   startPicking(index);
 }
@@ -219,7 +221,7 @@ async function onBeregn() {
       );
 
       pt.reachableStops = stops
-        .map((s, j) => ({ name: s.name, duration: durations[j] }))
+        .map((s, j) => ({ name: s.name, duration: durations[j], mode: s.transportMode }))
         .filter(s => s.duration !== null && s.duration <= pt.minutes * 60)
         .sort((a, b) => a.duration - b.duration);
 
@@ -250,6 +252,15 @@ async function onBeregn() {
   }
 }
 
+const TRANSPORT_ICONS = {
+  bus: '🚌', rail: '🚆', tram: '🚋', metro: '🚇',
+  water: '⛴', coach: '🚌', air: '✈',
+};
+
+function transportIcon(mode) {
+  return TRANSPORT_ICONS[mode] || '🚏';
+}
+
 function buildResultPanel(activePoints) {
   const container = document.getElementById('result-content');
   container.innerHTML = '';
@@ -266,7 +277,7 @@ function buildResultPanel(activePoints) {
       const row = document.createElement('div');
       row.className = 'result-row';
       const mins = Math.ceil(s.duration / 60);
-      row.innerHTML = `<span class="stop-name">${s.name}</span><span class="stop-duration">${mins} min</span>`;
+      row.innerHTML = `<span class="stop-icon">${transportIcon(s.mode)}</span><span class="stop-name">${s.name}</span><span class="stop-duration">${mins} min</span>`;
       list.appendChild(row);
     });
     section.appendChild(header);

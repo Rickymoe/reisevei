@@ -27,6 +27,7 @@ async function fetchStopsNearby(lat, lng, radiusMeters = 15000, maxStops = 80) {
               name
               latitude
               longitude
+              transportMode
             }
           }
           distance
