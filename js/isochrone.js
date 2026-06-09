@@ -8,7 +8,8 @@ function computeIsochrone(stops, durations, maxMinutes) {
     reachable.map(s => turf.point([s.longitude, s.latitude]))
   );
 
-  const hull = turf.concave(points, { maxEdge: 2 }) || turf.convex(points);
+  const maxEdgeKm = Math.max(5, maxMinutes * 1.2);
+  const hull = turf.concave(points, { maxEdge: maxEdgeKm }) || turf.convex(points);
   return hull; // GeoJSON Feature<Polygon> or null
 }
 
