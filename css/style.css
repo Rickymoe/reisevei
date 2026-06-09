@@ -16,6 +16,8 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   flex-direction: column;
   gap: 8px;
   width: 260px;
+  max-height: calc(100vh - 300px);
+  overflow: hidden;
 }
 
 #panel {
@@ -33,7 +35,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   padding: 16px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
   position: relative;
-  max-height: calc(100vh - 380px);
+  min-height: 0;
   overflow-y: auto;
 }
 
