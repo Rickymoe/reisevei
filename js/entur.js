@@ -20,9 +20,10 @@ function dynamicRadius(minutes) {
   return Math.min(Math.round(minutes * 1500), 80000);
 }
 
-async function fetchStopsNearby(lat, lng, radiusMeters = 15000, maxStops = 80) {
+async function fetchStopsQuery(lat, lng, radiusMeters, maxResults, modes = null) {
+  const modesFilter = modes ? `, filterByModes: [${modes.join(', ')}]` : '';
   const query = `{
-    nearest(latitude: ${lat}, longitude: ${lng}, maximumDistance: ${radiusMeters}, maximumResults: ${maxStops}, filterByPlaceTypes: [stopPlace]) {
+    nearest(latitude: ${lat}, longitude: ${lng}, maximumDistance: ${radiusMeters}, maximumResults: ${maxResults}, filterByPlaceTypes: [stopPlace]${modesFilter}) {
       edges {
         node {
           place {
@@ -43,6 +44,23 @@ async function fetchStopsNearby(lat, lng, radiusMeters = 15000, maxStops = 80) {
   return data.nearest.edges
     .map(e => e.node.place)
     .filter(p => p && p.latitude && p.longitude);
+}
+
+async function fetchStopsNearby(lat, lng, radiusMeters = 15000, maxStops = 80) {
+  const localRadius = Math.min(radiusMeters, 20000);
+  const localStops = await fetchStopsQuery(lat, lng, localRadius, Math.min(maxStops, 100));
+
+  if (radiusMeters <= 20000) return localStops;
+
+  // For large radii: add rail/metro/water/coach stops at full radius to catch distant stations
+  const longDistStops = await fetchStopsQuery(lat, lng, radiusMeters, 200, ['rail', 'metro', 'water', 'coach']);
+
+  const seen = new Set(localStops.map(s => s.id));
+  const merged = [...localStops];
+  for (const s of longDistStops) {
+    if (!seen.has(s.id)) { seen.add(s.id); merged.push(s); }
+  }
+  return merged;
 }
 
 async function fetchTripDuration(fromLat, fromLng, toStopId, dateTimeISO) {
