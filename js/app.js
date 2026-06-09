@@ -256,7 +256,7 @@ async function onBeregn() {
     hideProgress();
     const btn = document.getElementById('beregn-btn');
     btn.disabled = false;
-    btn.textContent = 'Beregn';
+    btn.textContent = 'Finn reiseveier';
   }
 }
 
