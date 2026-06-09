@@ -91,6 +91,12 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
 .result-row:last-child { border-bottom: none; }
 
+.stop-icon {
+  flex-shrink: 0;
+  font-size: 11px;
+  margin-right: 5px;
+}
+
 .result-row .stop-name {
   flex: 1;
   overflow: hidden;
