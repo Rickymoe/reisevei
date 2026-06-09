@@ -6,6 +6,7 @@ let map;
 let geocoder;
 let points = []; // [{ lat, lng, minutes, marker, polygon, color, label }]
 let pickingPointIndex = null;
+let hoverMarker = null;
 
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
@@ -293,6 +294,8 @@ function buildResultPanel(activePoints) {
       row.target = '_blank';
       row.rel = 'noopener';
       row.innerHTML = `<span class="stop-name">${s.name}</span><span class="stop-duration">${mins} min</span>`;
+      row.addEventListener('mouseenter', () => showHoverMarker(s.lat, s.lng));
+      row.addEventListener('mouseleave', removeHoverMarker);
       list.appendChild(row);
     });
     section.appendChild(header);
@@ -301,7 +304,24 @@ function buildResultPanel(activePoints) {
   });
 }
 
+function showHoverMarker(lat, lng) {
+  removeHoverMarker();
+  const dot = document.createElement('div');
+  dot.style.cssText = 'width:14px;height:14px;border-radius:50%;background:#ff6b35;border:2px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.5)';
+  hoverMarker = new google.maps.marker.AdvancedMarkerElement({
+    position: { lat, lng },
+    map,
+    content: dot,
+    zIndex: 100,
+  });
+}
+
+function removeHoverMarker() {
+  if (hoverMarker) { hoverMarker.map = null; hoverMarker = null; }
+}
+
 function clearPolygons() {
+  removeHoverMarker();
   points.forEach(pt => {
     (pt.polygons || []).forEach(p => p.setMap(null));
     pt.polygons = [];
