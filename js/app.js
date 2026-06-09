@@ -230,7 +230,7 @@ async function onBeregn() {
       );
 
       pt.reachableStops = stops
-        .map((s, j) => ({ name: s.name, id: s.id, duration: durations[j], mode: s.transportMode }))
+        .map((s, j) => ({ name: s.name, id: s.id, lat: s.latitude, lng: s.longitude, duration: durations[j], mode: s.transportMode }))
         .filter(s => s.duration !== null && s.duration <= pt.minutes * 60)
         .sort((a, b) => a.duration - b.duration);
 
@@ -286,7 +286,7 @@ function buildResultPanel(activePoints) {
     list.className = 'result-list';
     pt.reachableStops.forEach(s => {
       const mins = Math.ceil(s.duration / 60);
-      const url = `https://entur.no/reiseresultater?from=${pt.lat},${pt.lng}&to=${encodeURIComponent(s.id)}`;
+      const url = `https://entur.no/reiselenke?startLabel=${encodeURIComponent(pt.label)}&startLat=${pt.lat}&startLon=${pt.lng}&stopLabel=${encodeURIComponent(s.name)}&stopLat=${s.lat}&stopLon=${s.lng}`;
       const row = document.createElement('a');
       row.className = 'result-row';
       row.href = url;
