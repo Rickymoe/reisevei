@@ -3,6 +3,7 @@ const DEFAULT_MINUTES = 30;
 const MAX_POINTS = 3;
 
 let map;
+let geocoder;
 let points = []; // [{ lat, lng, minutes, marker, polygon, color, label }]
 let pickingPointIndex = null;
 
@@ -13,6 +14,7 @@ function initMap() {
     mapTypeId: 'roadmap',
     disableDefaultUI: false,
   });
+  geocoder = new google.maps.Geocoder();
 
   map.addListener('click', onMapClick);
   setupPanel();
@@ -32,7 +34,7 @@ function setPointCoords(index, lat, lng) {
   const pt = points[index];
   pt.lat = lat;
   pt.lng = lng;
-  pt.label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  pt.label = 'Henter adresse...';
 
   if (pt.marker) pt.marker.setMap(null);
   pt.marker = new google.maps.Marker({
@@ -49,6 +51,20 @@ function setPointCoords(index, lat, lng) {
   });
 
   renderPanel();
+
+  geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+    if (status === 'OK' && results[0]) {
+      const components = results[0].address_components;
+      const route = components.find(c => c.types.includes('route'));
+      const number = components.find(c => c.types.includes('street_number'));
+      pt.label = route
+        ? (number ? `${route.long_name} ${number.long_name}` : route.long_name)
+        : results[0].formatted_address.split(',')[0];
+    } else {
+      pt.label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    }
+    renderPanel();
+  });
 }
 
 function setDefaultDepartureTime() {
