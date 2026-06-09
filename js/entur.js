@@ -16,6 +16,10 @@ async function graphql(query) {
   return json.data;
 }
 
+function dynamicRadius(minutes) {
+  return Math.min(Math.round(minutes * 1500), 80000);
+}
+
 async function fetchStopsNearby(lat, lng, radiusMeters = 15000, maxStops = 80) {
   const query = `{
     nearest(latitude: ${lat}, longitude: ${lng}, maximumDistance: ${radiusMeters}, maximumResults: ${maxStops}, filterByPlaceTypes: [stopPlace]) {
