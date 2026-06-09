@@ -306,13 +306,18 @@ function buildResultPanel(activePoints) {
 
 function showHoverMarker(lat, lng) {
   removeHoverMarker();
-  const dot = document.createElement('div');
-  dot.style.cssText = 'width:14px;height:14px;border-radius:50%;background:#ff6b35;border:2px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.5)';
-  hoverMarker = new google.maps.marker.AdvancedMarkerElement({
+  hoverMarker = new google.maps.Marker({
     position: { lat, lng },
     map,
-    content: dot,
-    zIndex: 100,
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      fillColor: '#ff6b35',
+      fillOpacity: 1,
+      strokeColor: '#fff',
+      strokeWeight: 2,
+      scale: 9,
+    },
+    zIndex: 1000,
   });
 }
 
