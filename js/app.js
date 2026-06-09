@@ -191,7 +191,9 @@ async function onBeregn() {
   }
   const dateTimeISO = new Date(departureInput).toISOString();
 
-  document.getElementById('beregn-btn').disabled = true;
+  const beregnBtn = document.getElementById('beregn-btn');
+  beregnBtn.disabled = true;
+  beregnBtn.textContent = '⏳';
   document.getElementById('result-btn').classList.add('hidden');
   document.getElementById('result-panel').classList.add('hidden');
   clearPolygons();
@@ -201,9 +203,11 @@ async function onBeregn() {
       const pt = activePoints[i];
       showProgress(`Punkt ${i + 1}/${activePoints.length}: henter stopp...`);
 
+      const radius = dynamicRadius(pt.minutes);
+      const maxStops = pt.minutes >= 45 ? 150 : 80;
       let stops;
       try {
-        stops = await fetchStopsNearby(pt.lat, pt.lng);
+        stops = await fetchStopsNearby(pt.lat, pt.lng, radius, maxStops);
       } catch {
         showError('Entur er ikke tilgjengelig akkurat nå.');
         return;
@@ -248,7 +252,9 @@ async function onBeregn() {
     document.getElementById('result-btn').classList.remove('hidden');
   } finally {
     hideProgress();
-    document.getElementById('beregn-btn').disabled = false;
+    const btn = document.getElementById('beregn-btn');
+    btn.disabled = false;
+    btn.textContent = 'Beregn';
   }
 }
 
@@ -274,9 +280,14 @@ function buildResultPanel(activePoints) {
     const list = document.createElement('div');
     list.className = 'result-list';
     pt.reachableStops.forEach(s => {
-      const row = document.createElement('div');
-      row.className = 'result-row';
       const mins = Math.ceil(s.duration / 60);
+      const prompt = `Gi meg rute fra ${pt.label} til ${s.name} nå`;
+      const url = `https://claude.ai/new?q=${encodeURIComponent(prompt)}`;
+      const row = document.createElement('a');
+      row.className = 'result-row';
+      row.href = url;
+      row.target = '_blank';
+      row.rel = 'noopener';
       row.innerHTML = `<span class="stop-icon">${transportIcon(s.mode)}</span><span class="stop-name">${s.name}</span><span class="stop-duration">${mins} min</span>`;
       list.appendChild(row);
     });
