@@ -322,7 +322,7 @@ function showHoverMarker(lat, lng) {
 }
 
 function removeHoverMarker() {
-  if (hoverMarker) { hoverMarker.map = null; hoverMarker = null; }
+  if (hoverMarker) { hoverMarker.setMap(null); hoverMarker = null; }
 }
 
 function clearPolygons() {
