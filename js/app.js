@@ -13,6 +13,7 @@ function initMap() {
     zoom: 12,
     mapTypeId: 'roadmap',
     disableDefaultUI: false,
+    mapId: 'DEMO_MAP_ID',
   });
   geocoder = new google.maps.Geocoder();
 
@@ -36,18 +37,13 @@ function setPointCoords(index, lat, lng) {
   pt.lng = lng;
   pt.label = 'Henter adresse...';
 
-  if (pt.marker) pt.marker.setMap(null);
-  pt.marker = new google.maps.Marker({
+  if (pt.marker) pt.marker.map = null;
+  const dot = document.createElement('div');
+  dot.style.cssText = `width:16px;height:16px;border-radius:50%;background:${pt.color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)`;
+  pt.marker = new google.maps.marker.AdvancedMarkerElement({
     position: { lat, lng },
     map,
-    icon: {
-      path: google.maps.SymbolPath.CIRCLE,
-      scale: 8,
-      fillColor: pt.color,
-      fillOpacity: 1,
-      strokeColor: '#fff',
-      strokeWeight: 2,
-    },
+    content: dot,
   });
 
   renderPanel();
@@ -141,7 +137,7 @@ function renderPanel() {
 
 function removePoint(index) {
   const pt = points[index];
-  if (pt.marker) pt.marker.setMap(null);
+  if (pt.marker) pt.marker.map = null;
   if (pt.polygon) pt.polygon.setMap(null);
   if (pt.intersectionPolygon) pt.intersectionPolygon.setMap(null);
   points.splice(index, 1);
