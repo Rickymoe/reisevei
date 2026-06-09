@@ -154,7 +154,7 @@ function removePoint(index) {
   points.forEach((p, i) => { p.color = POINT_COLORS[i]; });
   document.getElementById('result-btn').classList.add('hidden');
   document.getElementById('result-panel').classList.add('hidden');
-  renderPanel();
+  if (points.length === 0) { addPoint(); } else { renderPanel(); }
 }
 
 function showError(msg) {
