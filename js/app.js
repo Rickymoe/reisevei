@@ -147,8 +147,9 @@ function removePoint(index) {
   if (pt.polygon) pt.polygon.setMap(null);
   if (pt.intersectionPolygon) pt.intersectionPolygon.setMap(null);
   points.splice(index, 1);
-  // reassign colors
   points.forEach((p, i) => { p.color = POINT_COLORS[i]; });
+  document.getElementById('result-btn').classList.add('hidden');
+  document.getElementById('result-panel').classList.add('hidden');
   renderPanel();
 }
 
