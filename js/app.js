@@ -78,8 +78,7 @@ function setDefaultDepartureTime() {
 
 function setupPanel() {
   addPoint(); // start with one point
-  document.getElementById('add-point-btn').addEventListener('click', addPoint);
-document.getElementById('beregn-btn').addEventListener('click', onBeregn);
+  document.getElementById('beregn-btn').addEventListener('click', onBeregn);
   document.getElementById('result-btn').addEventListener('click', () => {
     document.getElementById('result-panel').classList.remove('hidden');
   });
@@ -144,9 +143,6 @@ function renderPanel() {
     btn.addEventListener('click', e => removePoint(+e.target.dataset.index));
   });
 
-  const maxed = points.length >= MAX_POINTS;
-  const hasUnplaced = points.some(p => p.lat === null);
-  document.getElementById('add-point-btn').disabled = maxed || hasUnplaced;
 }
 
 function removePoint(index) {
