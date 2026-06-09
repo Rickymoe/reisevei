@@ -182,6 +182,8 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 #beregn-btn:hover { background: #1558b0; }
 #beregn-btn:disabled { background: #aaa; cursor: default; }
 
+#result-btn { margin-top: 8px; }
+
 .secondary-btn {
   width: 100%;
   padding: 7px;
