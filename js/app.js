@@ -67,6 +67,9 @@ function setupPanel() {
   addPoint(); // start with one point
   document.getElementById('add-point-btn').addEventListener('click', addPoint);
   document.getElementById('beregn-btn').addEventListener('click', onBeregn);
+  document.querySelector('#info-box .close-btn').addEventListener('click', () => {
+    document.getElementById('info-box').classList.add('hidden');
+  });
 }
 
 function addPoint() {
