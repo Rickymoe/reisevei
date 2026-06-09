@@ -128,8 +128,8 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
 #info-box {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  bottom: 16px;
+  left: 16px;
   z-index: 11;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
