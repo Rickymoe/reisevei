@@ -286,7 +286,7 @@ function buildResultPanel(activePoints) {
     list.className = 'result-list';
     pt.reachableStops.forEach(s => {
       const mins = Math.ceil(s.duration / 60);
-      const url = `https://entur.no/reiseresultater?transportModes=bus%2Ctram%2Crail%2Cmetro%2Cwater%2Ccoach&fromLat=${pt.lat}&fromLng=${pt.lng}&fromName=${encodeURIComponent(pt.label)}&toId=${encodeURIComponent(s.id)}&toName=${encodeURIComponent(s.name)}`;
+      const url = `https://entur.no/reiseresultater?from=${pt.lat},${pt.lng}&to=${encodeURIComponent(s.id)}`;
       const row = document.createElement('a');
       row.className = 'result-row';
       row.href = url;
