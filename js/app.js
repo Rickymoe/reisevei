@@ -292,7 +292,7 @@ function buildResultPanel(activePoints) {
       row.href = url;
       row.target = '_blank';
       row.rel = 'noopener';
-      row.innerHTML = `<span class="stop-icon">${transportIcon(s.mode)}</span><span class="stop-name">${s.name}</span><span class="stop-duration">${mins} min</span>`;
+      row.innerHTML = `<span class="stop-name">${s.name}</span><span class="stop-duration">${mins} min</span>`;
       list.appendChild(row);
     });
     section.appendChild(header);
