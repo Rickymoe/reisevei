@@ -230,7 +230,7 @@ async function onBeregn() {
       );
 
       pt.reachableStops = stops
-        .map((s, j) => ({ name: s.name, duration: durations[j], mode: s.transportMode }))
+        .map((s, j) => ({ name: s.name, id: s.id, duration: durations[j], mode: s.transportMode }))
         .filter(s => s.duration !== null && s.duration <= pt.minutes * 60)
         .sort((a, b) => a.duration - b.duration);
 
@@ -286,8 +286,12 @@ function buildResultPanel(activePoints) {
     list.className = 'result-list';
     pt.reachableStops.forEach(s => {
       const mins = Math.ceil(s.duration / 60);
-      const row = document.createElement('div');
+      const url = `https://entur.no/reiseresultater?transportModes=bus%2Ctram%2Crail%2Cmetro%2Cwater%2Ccoach&fromLat=${pt.lat}&fromLng=${pt.lng}&fromName=${encodeURIComponent(pt.label)}&toId=${encodeURIComponent(s.id)}&toName=${encodeURIComponent(s.name)}`;
+      const row = document.createElement('a');
       row.className = 'result-row';
+      row.href = url;
+      row.target = '_blank';
+      row.rel = 'noopener';
       row.innerHTML = `<span class="stop-icon">${transportIcon(s.mode)}</span><span class="stop-name">${s.name}</span><span class="stop-duration">${mins} min</span>`;
       list.appendChild(row);
     });
