@@ -78,6 +78,17 @@ function setDefaultDepartureTime() {
 function setupPanel() {
   addPoint(); // start with one point
   document.getElementById('add-point-btn').addEventListener('click', addPoint);
+  document.getElementById('add-address-btn').addEventListener('click', () => {
+    document.getElementById('add-address-btn').classList.add('hidden');
+    document.getElementById('address-input-row').classList.remove('hidden');
+    document.getElementById('address-input').focus();
+  });
+  document.getElementById('address-cancel-btn').addEventListener('click', hideAddressInput);
+  document.getElementById('address-search-btn').addEventListener('click', geocodeAndAddPoint);
+  document.getElementById('address-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') geocodeAndAddPoint();
+    if (e.key === 'Escape') hideAddressInput();
+  });
   document.getElementById('beregn-btn').addEventListener('click', onBeregn);
   document.getElementById('result-btn').addEventListener('click', () => {
     document.getElementById('result-panel').classList.remove('hidden');
@@ -116,6 +127,44 @@ function startPicking(index) {
   document.getElementById('map').classList.add('picking-mode');
 }
 
+function hideAddressInput() {
+  document.getElementById('address-input-row').classList.add('hidden');
+  document.getElementById('add-address-btn').classList.remove('hidden');
+  document.getElementById('address-input').value = '';
+}
+
+function geocodeAndAddPoint() {
+  const query = document.getElementById('address-input').value.trim();
+  if (!query) return;
+
+  const index = points.length;
+  points.push({
+    lat: null, lng: null,
+    minutes: DEFAULT_MINUTES,
+    marker: null,
+    polygons: [],
+    intersectionPolygon: null,
+    color: POINT_COLORS[index],
+    label: 'Søker...',
+  });
+  document.getElementById('result-btn').classList.add('hidden');
+  document.getElementById('result-panel').classList.add('hidden');
+  renderPanel();
+
+  geocoder.geocode({ address: query, region: 'no' }, (results, status) => {
+    if (status === 'OK' && results[0]) {
+      const loc = results[0].geometry.location;
+      map.panTo({ lat: loc.lat(), lng: loc.lng() });
+      setPointCoords(index, loc.lat(), loc.lng());
+    } else {
+      points.splice(index, 1);
+      renderPanel();
+      showError('Fant ikke adressen. Prøv et annet søk.');
+    }
+    hideAddressInput();
+  });
+}
+
 function renderPanel() {
   const container = document.getElementById('points-container');
   container.innerHTML = '';
@@ -142,9 +191,10 @@ function renderPanel() {
     btn.addEventListener('click', e => removePoint(+e.target.dataset.index));
   });
 
-  const addBtn = document.getElementById('add-point-btn');
+  const maxed = points.length >= MAX_POINTS;
   const hasUnplaced = points.some(p => p.lat === null);
-  addBtn.disabled = points.length >= MAX_POINTS || hasUnplaced;
+  document.getElementById('add-point-btn').disabled = maxed || hasUnplaced;
+  document.getElementById('add-address-btn').disabled = maxed || hasUnplaced;
 }
 
 function removePoint(index) {
@@ -285,13 +335,8 @@ function buildResultPanel(activePoints) {
     list.className = 'result-list';
     pt.reachableStops.forEach(s => {
       const mins = Math.ceil(s.duration / 60);
-      const prompt = `Gi meg rute fra ${pt.label} til ${s.name} nå`;
-      const url = `https://claude.ai/new?q=${encodeURIComponent(prompt)}`;
-      const row = document.createElement('a');
+      const row = document.createElement('div');
       row.className = 'result-row';
-      row.href = url;
-      row.target = '_blank';
-      row.rel = 'noopener';
       row.innerHTML = `<span class="stop-icon">${transportIcon(s.mode)}</span><span class="stop-name">${s.name}</span><span class="stop-duration">${mins} min</span>`;
       list.appendChild(row);
     });
