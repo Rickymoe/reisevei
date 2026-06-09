@@ -79,6 +79,12 @@ function setupPanel() {
   addPoint(); // start with one point
   document.getElementById('add-point-btn').addEventListener('click', addPoint);
   document.getElementById('beregn-btn').addEventListener('click', onBeregn);
+  document.getElementById('result-btn').addEventListener('click', () => {
+    document.getElementById('result-panel').classList.remove('hidden');
+  });
+  document.querySelector('#result-panel .close-btn').addEventListener('click', () => {
+    document.getElementById('result-panel').classList.add('hidden');
+  });
   document.querySelector('#info-box .close-btn').addEventListener('click', () => {
     document.getElementById('info-box').classList.add('hidden');
   });
@@ -183,6 +189,8 @@ async function onBeregn() {
   const dateTimeISO = new Date(departureInput).toISOString();
 
   document.getElementById('beregn-btn').disabled = true;
+  document.getElementById('result-btn').classList.add('hidden');
+  document.getElementById('result-panel').classList.add('hidden');
   clearPolygons();
 
   try {
@@ -209,6 +217,11 @@ async function onBeregn() {
         (done, total) => showProgress(`Punkt ${i + 1}: beregner reisetider ${done}/${total}...`)
       );
 
+      pt.reachableStops = stops
+        .map((s, j) => ({ name: s.name, duration: durations[j] }))
+        .filter(s => s.duration !== null && s.duration <= pt.minutes * 60)
+        .sort((a, b) => a.duration - b.duration);
+
       const polygon = computeIsochrone(stops, durations, pt.minutes);
       if (!polygon) {
         showError(`For få nåbare stopp for punkt ${i + 1}. Prøv en lengre reisetid.`);
@@ -228,10 +241,37 @@ async function onBeregn() {
     }
 
     drawIntersections(activePoints);
+    buildResultPanel(activePoints);
+    document.getElementById('result-btn').classList.remove('hidden');
   } finally {
     hideProgress();
     document.getElementById('beregn-btn').disabled = false;
   }
+}
+
+function buildResultPanel(activePoints) {
+  const container = document.getElementById('result-content');
+  container.innerHTML = '';
+  activePoints.forEach(pt => {
+    if (!pt.reachableStops || pt.reachableStops.length === 0) return;
+    const section = document.createElement('div');
+    section.className = 'result-section';
+    const header = document.createElement('div');
+    header.className = 'result-section-header';
+    header.innerHTML = `<span class="point-dot" style="background:${pt.color}"></span>${pt.label}`;
+    const list = document.createElement('div');
+    list.className = 'result-list';
+    pt.reachableStops.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'result-row';
+      const mins = Math.ceil(s.duration / 60);
+      row.innerHTML = `<span class="stop-name">${s.name}</span><span class="stop-duration">${mins} min</span>`;
+      list.appendChild(row);
+    });
+    section.appendChild(header);
+    section.appendChild(list);
+    container.appendChild(section);
+  });
 }
 
 function clearPolygons() {

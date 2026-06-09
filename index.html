@@ -9,25 +9,35 @@
 <body>
   <div id="map"></div>
 
-  <div id="panel">
-    <h2>Reisevei</h2>
+  <div id="left-column">
+    <div id="panel">
+      <h2>Reisevei</h2>
 
-    <div id="points-container"></div>
+      <div id="points-container"></div>
 
-    <button id="add-point-btn" class="secondary-btn">+ Legg til punkt</button>
+      <button id="add-point-btn" class="secondary-btn">+ Legg til punkt</button>
 
-    <div class="field-group">
-      <label for="departure-time">Avgangstid</label>
-      <input type="datetime-local" id="departure-time" />
+      <div class="field-group">
+        <label for="departure-time">Avgangstid</label>
+        <input type="datetime-local" id="departure-time" />
+      </div>
+
+      <button id="beregn-btn">Beregn</button>
+
+      <div id="progress" class="hidden">
+        <span id="progress-text">Beregner...</span>
+      </div>
+
+      <div id="error-msg" class="hidden"></div>
+
+      <button id="result-btn" class="secondary-btn hidden">Se resultat</button>
     </div>
 
-    <button id="beregn-btn">Beregn</button>
-
-    <div id="progress" class="hidden">
-      <span id="progress-text">Beregner...</span>
+    <div id="result-panel" class="hidden">
+      <button class="close-btn" aria-label="Lukk">&times;</button>
+      <h3>Nåbare stopp</h3>
+      <div id="result-content"></div>
     </div>
-
-    <div id="error-msg" class="hidden"></div>
   </div>
 
   <div id="info-box">
