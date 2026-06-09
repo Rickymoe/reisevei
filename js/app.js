@@ -124,6 +124,7 @@ function renderPanel() {
       <span class="point-label" title="${pt.label}">${pt.label}</span>
       <input class="point-minutes" type="number" min="5" max="120" value="${pt.minutes}"
              data-index="${i}" />
+      <span class="point-minutes-label">min.</span>
       <button class="remove-btn" data-index="${i}" title="Fjern punkt">×</button>
     `;
     container.appendChild(row);
