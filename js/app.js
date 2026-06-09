@@ -85,8 +85,11 @@ function setupPanel() {
   document.querySelector('#result-panel .close-btn').addEventListener('click', () => {
     document.getElementById('result-panel').classList.add('hidden');
   });
-  document.querySelector('#info-box .close-btn').addEventListener('click', () => {
-    document.getElementById('info-box').classList.add('hidden');
+  document.getElementById('info-btn').addEventListener('click', () => {
+    document.getElementById('info-panel').classList.toggle('hidden');
+  });
+  document.querySelector('#info-panel .close-btn').addEventListener('click', () => {
+    document.getElementById('info-panel').classList.add('hidden');
   });
 }
 
@@ -97,7 +100,7 @@ function addPoint() {
     lat: null, lng: null,
     minutes: DEFAULT_MINUTES,
     marker: null,
-    polygon: null,
+    polygons: [],
     intersectionPolygon: null,
     color: POINT_COLORS[index],
     label: 'Klikk på kartet...',
@@ -147,7 +150,7 @@ function renderPanel() {
 function removePoint(index) {
   const pt = points[index];
   if (pt.marker) pt.marker.map = null;
-  if (pt.polygon) pt.polygon.setMap(null);
+  (pt.polygons || []).forEach(p => p.setMap(null));
   if (pt.intersectionPolygon) pt.intersectionPolygon.setMap(null);
   points.splice(index, 1);
   points.forEach((p, i) => { p.color = POINT_COLORS[i]; });
@@ -236,15 +239,15 @@ async function onBeregn() {
         continue;
       }
 
-      pt.polygon = new google.maps.Polygon({
-        paths: geoJsonToGooglePath(polygon),
+      pt.polygons = geoJsonToGooglePaths(polygon).map(path => new google.maps.Polygon({
+        paths: path,
         strokeColor: pt.color,
         strokeOpacity: 0.9,
         strokeWeight: 2,
         fillColor: pt.color,
         fillOpacity: 0.15,
         map,
-      });
+      }));
       pt._geoPolygon = polygon;
     }
 
@@ -300,7 +303,8 @@ function buildResultPanel(activePoints) {
 
 function clearPolygons() {
   points.forEach(pt => {
-    if (pt.polygon) { pt.polygon.setMap(null); pt.polygon = null; }
+    (pt.polygons || []).forEach(p => p.setMap(null));
+    pt.polygons = [];
     if (pt.intersectionPolygon) { pt.intersectionPolygon.setMap(null); pt.intersectionPolygon = null; }
     pt._geoPolygon = null;
   });

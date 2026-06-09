@@ -21,10 +21,11 @@ function computeIntersection(polygon1, polygon2) {
   }
 }
 
-function geoJsonToGooglePath(polygon) {
-  // turf.concave/intersect can return MultiPolygon when stops form disconnected clusters
-  const ring = polygon.geometry.type === 'MultiPolygon'
-    ? polygon.geometry.coordinates[0][0]
-    : polygon.geometry.coordinates[0];
-  return ring.map(([lng, lat]) => ({ lat, lng }));
+function geoJsonToGooglePaths(polygon) {
+  if (polygon.geometry.type === 'MultiPolygon') {
+    return polygon.geometry.coordinates.map(coords =>
+      coords[0].map(([lng, lat]) => ({ lat, lng }))
+    );
+  }
+  return [polygon.geometry.coordinates[0].map(([lng, lat]) => ({ lat, lng }))];
 }
