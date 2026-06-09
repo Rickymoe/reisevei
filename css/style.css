@@ -130,7 +130,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   position: absolute;
   top: 16px;
   right: 16px;
-  z-index: 10;
+  z-index: 11;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   border-radius: 12px;
