@@ -22,7 +22,9 @@ function computeIntersection(polygon1, polygon2) {
 }
 
 function geoJsonToGooglePath(polygon) {
-  // polygon is GeoJSON Feature<Polygon>
-  const coords = polygon.geometry.coordinates[0]; // outer ring
-  return coords.map(([lng, lat]) => ({ lat, lng }));
+  // turf.concave/intersect can return MultiPolygon when stops form disconnected clusters
+  const ring = polygon.geometry.type === 'MultiPolygon'
+    ? polygon.geometry.coordinates[0][0]
+    : polygon.geometry.coordinates[0];
+  return ring.map(([lng, lat]) => ({ lat, lng }));
 }
