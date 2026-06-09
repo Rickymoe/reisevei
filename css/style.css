@@ -9,7 +9,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
 #left-column {
   position: absolute;
-  top: 60px;
+  top: 90px;
   left: 16px;
   z-index: 10;
   display: flex;
