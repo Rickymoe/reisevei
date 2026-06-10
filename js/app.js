@@ -2,6 +2,13 @@ const POINT_COLORS = ['#1a73e8', '#e8710a', '#34a853'];
 const DEFAULT_MINUTES = 30;
 const MAX_POINTS = 3;
 
+const NORWAY_BOUNDS = { latMin: 57.5, latMax: 71.5, lngMin: 4.0, lngMax: 32.0 };
+
+function isInNorway(lat, lng) {
+  return lat >= NORWAY_BOUNDS.latMin && lat <= NORWAY_BOUNDS.latMax &&
+         lng >= NORWAY_BOUNDS.lngMin && lng <= NORWAY_BOUNDS.lngMax;
+}
+
 let map;
 let geocoder;
 let points = []; // [{ lat, lng, minutes, marker, polygon, color, label }]
@@ -27,6 +34,11 @@ function onMapClick(e) {
   if (pickingPointIndex === null) return;
   const lat = e.latLng.lat();
   const lng = e.latLng.lng();
+  if (!isInNorway(lat, lng)) {
+    showError('Reisevei bruker Entur og støtter kun reiser i Norge. Klikk innenfor Norges grenser.');
+    return;
+  }
+  hideError();
   setPointCoords(pickingPointIndex, lat, lng);
   pickingPointIndex = null;
   document.getElementById('map').classList.remove('picking-mode');
