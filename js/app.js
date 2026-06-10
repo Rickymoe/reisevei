@@ -228,7 +228,7 @@ async function onBeregn() {
       }
 
       if (stops.length === 0) {
-        showError('Ingen kollektivstopp funnet i dette området.');
+        showError(`Finner ingen kollektivstopp innen ${pt.minutes} min. Prøv med lengre reisetid.`);
         return;
       }
 
@@ -245,7 +245,7 @@ async function onBeregn() {
 
       const polygon = computeIsochrone(stops, durations, pt.minutes);
       if (!polygon) {
-        showError(`For få nåbare stopp for punkt ${i + 1}. Prøv en lengre reisetid.`);
+        showError(`Finner ikke reiseveier innen ${pt.minutes} min. Prøv med lengre reisetid.`);
         continue;
       }
 
