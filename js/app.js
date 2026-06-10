@@ -14,6 +14,7 @@ let geocoder;
 let points = []; // [{ lat, lng, minutes, marker, polygon, color, label }]
 let pickingPointIndex = null;
 let hoverMarker = null;
+let intersectionPolygons = [];
 
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
@@ -157,13 +158,16 @@ function renderPanel() {
     btn.addEventListener('click', e => removePoint(+e.target.dataset.index));
   });
 
+  const hasPoint = points.some(p => p.lat !== null);
+  document.getElementById('beregn-btn').disabled = !hasPoint;
 }
 
 function removePoint(index) {
   const pt = points[index];
   if (pt.marker) pt.marker.map = null;
   (pt.polygons || []).forEach(p => p.setMap(null));
-  if (pt.intersectionPolygon) pt.intersectionPolygon.setMap(null);
+  intersectionPolygons.forEach(p => p.setMap(null));
+  intersectionPolygons = [];
   points.splice(index, 1);
   points.forEach((p, i) => { p.color = POINT_COLORS[i]; });
   document.getElementById('result-btn').classList.add('hidden');
@@ -340,9 +344,10 @@ function clearPolygons() {
   points.forEach(pt => {
     (pt.polygons || []).forEach(p => p.setMap(null));
     pt.polygons = [];
-    if (pt.intersectionPolygon) { pt.intersectionPolygon.setMap(null); pt.intersectionPolygon = null; }
     pt._geoPolygon = null;
   });
+  intersectionPolygons.forEach(p => p.setMap(null));
+  intersectionPolygons = [];
 }
 
 function drawIntersections(activePoints) {
@@ -353,14 +358,16 @@ function drawIntersections(activePoints) {
         activePoints[j]._geoPolygon
       );
       if (!intersection) continue;
-      activePoints[i].intersectionPolygon = new google.maps.Polygon({
-        paths: geoJsonToGooglePath(intersection),
-        strokeColor: '#34a853',
-        strokeOpacity: 0.9,
-        strokeWeight: 2,
-        fillColor: '#34a853',
-        fillOpacity: 0.35,
-        map,
+      geoJsonToGooglePaths(intersection).forEach(path => {
+        intersectionPolygons.push(new google.maps.Polygon({
+          paths: path,
+          strokeColor: '#34a853',
+          strokeOpacity: 0.9,
+          strokeWeight: 2,
+          fillColor: '#34a853',
+          fillOpacity: 0.35,
+          map,
+        }));
       });
     }
   }
