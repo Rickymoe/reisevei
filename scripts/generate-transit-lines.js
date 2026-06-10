@@ -71,6 +71,42 @@ function fetchOverpass(query, endpointIndex = 0) {
   });
 }
 
+function coordsMatch(a, b) {
+  return a && b && a[0] === b[0] && a[1] === b[1];
+}
+
+function stitchWays(ways) {
+  if (ways.length === 0) return [];
+  const remaining = ways.map(w => [...w]);
+  const chain = remaining.shift();
+
+  let changed = true;
+  while (remaining.length > 0 && changed) {
+    changed = false;
+    for (let i = 0; i < remaining.length; i++) {
+      const way = remaining[i];
+      const head = chain[chain.length - 1];
+      const tail = chain[0];
+
+      if (coordsMatch(head, way[0])) {
+        chain.push(...way.slice(1)); remaining.splice(i, 1); changed = true; break;
+      }
+      if (coordsMatch(head, way[way.length - 1])) {
+        chain.push(...[...way].reverse().slice(1)); remaining.splice(i, 1); changed = true; break;
+      }
+      if (coordsMatch(tail, way[way.length - 1])) {
+        chain.unshift(...way.slice(0, -1)); remaining.splice(i, 1); changed = true; break;
+      }
+      if (coordsMatch(tail, way[0])) {
+        chain.unshift(...[...way].reverse().slice(0, -1)); remaining.splice(i, 1); changed = true; break;
+      }
+    }
+  }
+  // Append any truly disconnected segments (rare - just concatenate)
+  for (const way of remaining) chain.push(...way);
+  return chain;
+}
+
 function buildGeoJSON(osmData) {
   const nodeById = {};
   for (const el of osmData.elements) {
@@ -96,11 +132,17 @@ function buildGeoJSON(osmData) {
     if (seenKey.has(key)) continue; // keep first relation per line
     seenKey.add(key);
 
-    const coords = el.members
+    const ways = el.members
       .filter(m => m.type === 'way')
-      .flatMap(m => wayById[m.ref] || []);
+      .map(m => wayById[m.ref])
+      .filter(Boolean);
+    const coords = stitchWays(ways);
 
-    if (coords.length < 2) continue;
+    const deduped = coords.filter((c, i) =>
+      i === 0 || c[0] !== coords[i - 1][0] || c[1] !== coords[i - 1][1]
+    );
+
+    if (deduped.length < 2) continue;
 
     const colorMap = LINE_COLORS[routeType] || {};
     const color = colorMap[ref] || '#888888';
@@ -109,7 +151,7 @@ function buildGeoJSON(osmData) {
     features.push({
       type: 'Feature',
       properties: { line: ref, type: routeType, name: `${typeName} ${ref}`, color },
-      geometry: { type: 'LineString', coordinates: coords },
+      geometry: { type: 'LineString', coordinates: deduped },
     });
   }
 
