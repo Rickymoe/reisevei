@@ -292,3 +292,11 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 }
 
 #info-panel .close-btn:hover { color: #555; }
+
+@media (max-width: 580px) {
+  #info-panel {
+    left: 10px;
+    right: 10px;
+    width: auto;
+  }
+}
