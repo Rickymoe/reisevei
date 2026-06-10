@@ -33,6 +33,9 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   padding: 16px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
   position: relative;
+}
+
+#result-content {
   max-height: clamp(120px, calc(100vh - 550px), 300px);
   overflow-y: auto;
 }
@@ -74,6 +77,11 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   font-weight: 600;
   color: #333;
   margin-bottom: 4px;
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 4px 0;
+  z-index: 1;
 }
 
 .result-list {
