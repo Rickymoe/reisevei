@@ -48,12 +48,23 @@ async function fetchStopsQuery(lat, lng, radiusMeters, maxResults, modes = null)
 
 async function fetchStopsNearby(lat, lng, radiusMeters = 15000, maxStops = 80) {
   const localRadius = Math.min(radiusMeters, 20000);
-  const localStops = await fetchStopsQuery(lat, lng, localRadius, Math.min(maxStops, 100));
+  let localStops;
+  try {
+    localStops = await fetchStopsQuery(lat, lng, localRadius, Math.min(maxStops, 100));
+  } catch (err) {
+    if (err.message.startsWith('Entur HTTP')) throw err; // real service outage
+    return []; // GraphQL error = outside coverage area
+  }
 
   if (radiusMeters <= 20000) return localStops;
 
   // For large radii: add rail/metro/water/coach stops at full radius to catch distant stations
-  const longDistStops = await fetchStopsQuery(lat, lng, radiusMeters, 200, ['rail', 'metro', 'water', 'coach']);
+  let longDistStops = [];
+  try {
+    longDistStops = await fetchStopsQuery(lat, lng, radiusMeters, 200, ['rail', 'metro', 'water', 'coach']);
+  } catch {
+    // non-critical: local stops already found
+  }
 
   const seen = new Set(localStops.map(s => s.id));
   const merged = [...localStops];
