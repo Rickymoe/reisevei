@@ -148,7 +148,9 @@ function renderPanel() {
 
   container.querySelectorAll('.point-minutes').forEach(input => {
     input.addEventListener('change', e => {
-      points[+e.target.dataset.index].minutes = +e.target.value;
+      const clamped = Math.min(120, Math.max(5, +e.target.value));
+      e.target.value = clamped;
+      points[+e.target.dataset.index].minutes = clamped;
     });
   });
   container.querySelectorAll('.remove-btn').forEach(btn => {
