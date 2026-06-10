@@ -56481,7 +56481,7 @@
         "line": "11",
         "type": "tram",
         "name": "Trikk 11",
-        "color": "#888888"
+        "color": "#9B1FA0"
       },
       "geometry": {
         "type": "LineString",
