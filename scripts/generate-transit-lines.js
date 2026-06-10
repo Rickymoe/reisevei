@@ -78,33 +78,34 @@ function coordsMatch(a, b) {
 function stitchWays(ways) {
   if (ways.length === 0) return [];
   const remaining = ways.map(w => [...w]);
-  const chain = remaining.shift();
+  const chains = [];
 
-  let changed = true;
-  while (remaining.length > 0 && changed) {
-    changed = false;
-    for (let i = 0; i < remaining.length; i++) {
-      const way = remaining[i];
-      const head = chain[chain.length - 1];
-      const tail = chain[0];
-
-      if (coordsMatch(head, way[0])) {
-        chain.push(...way.slice(1)); remaining.splice(i, 1); changed = true; break;
-      }
-      if (coordsMatch(head, way[way.length - 1])) {
-        chain.push(...[...way].reverse().slice(1)); remaining.splice(i, 1); changed = true; break;
-      }
-      if (coordsMatch(tail, way[way.length - 1])) {
-        chain.unshift(...way.slice(0, -1)); remaining.splice(i, 1); changed = true; break;
-      }
-      if (coordsMatch(tail, way[0])) {
-        chain.unshift(...[...way].reverse().slice(0, -1)); remaining.splice(i, 1); changed = true; break;
+  while (remaining.length > 0) {
+    const chain = remaining.shift();
+    let changed = true;
+    while (remaining.length > 0 && changed) {
+      changed = false;
+      for (let i = 0; i < remaining.length; i++) {
+        const way = remaining[i];
+        const head = chain[chain.length - 1];
+        const tail = chain[0];
+        if (coordsMatch(head, way[0])) {
+          chain.push(...way.slice(1)); remaining.splice(i, 1); changed = true; break;
+        }
+        if (coordsMatch(head, way[way.length - 1])) {
+          chain.push(...[...way].reverse().slice(1)); remaining.splice(i, 1); changed = true; break;
+        }
+        if (coordsMatch(tail, way[way.length - 1])) {
+          chain.unshift(...way.slice(0, -1)); remaining.splice(i, 1); changed = true; break;
+        }
+        if (coordsMatch(tail, way[0])) {
+          chain.unshift(...[...way].reverse().slice(0, -1)); remaining.splice(i, 1); changed = true; break;
+        }
       }
     }
+    chains.push(chain);
   }
-  // Append any truly disconnected segments (rare - just concatenate)
-  for (const way of remaining) chain.push(...way);
-  return chain;
+  return chains; // array of connected chains — no cross-city jumps between disconnected segments
 }
 
 function buildGeoJSON(osmData) {
@@ -119,40 +120,39 @@ function buildGeoJSON(osmData) {
     }
   }
 
-  const seenKey = new Set();
-  const features = [];
-
+  // Collect all unique way IDs per (routeType, ref) across all relations
+  const lineWayIds = {};
   for (const el of osmData.elements) {
     if (el.type !== 'relation') continue;
     const routeType = el.tags.route;
     const ref = el.tags.ref;
     if (!ref) continue;
-
     const key = `${routeType}-${ref}`;
-    if (seenKey.has(key)) continue; // keep first relation per line
-    seenKey.add(key);
+    if (!lineWayIds[key]) lineWayIds[key] = { routeType, ref, wayIds: new Set() };
+    el.members.filter(m => m.type === 'way').forEach(m => lineWayIds[key].wayIds.add(m.ref));
+  }
 
-    const ways = el.members
-      .filter(m => m.type === 'way')
-      .map(m => wayById[m.ref])
-      .filter(Boolean);
-    const coords = stitchWays(ways);
+  const features = [];
 
-    const deduped = coords.filter((c, i) =>
-      i === 0 || c[0] !== coords[i - 1][0] || c[1] !== coords[i - 1][1]
-    );
-
-    if (deduped.length < 2) continue;
+  for (const [, { routeType, ref, wayIds }] of Object.entries(lineWayIds)) {
+    const ways = [...wayIds].map(id => wayById[id]).filter(Boolean);
+    const chains = stitchWays(ways);
 
     const colorMap = LINE_COLORS[routeType] || {};
     const color = colorMap[ref] || '#888888';
     const typeName = routeType === 'tram' ? 'Trikk' : 'T-bane';
 
-    features.push({
-      type: 'Feature',
-      properties: { line: ref, type: routeType, name: `${typeName} ${ref}`, color },
-      geometry: { type: 'LineString', coordinates: deduped },
-    });
+    for (const coords of chains) {
+      const deduped = coords.filter((c, i) =>
+        i === 0 || c[0] !== coords[i - 1][0] || c[1] !== coords[i - 1][1]
+      );
+      if (deduped.length < 20) continue; // skip tiny segments (sidings, depot tracks)
+      features.push({
+        type: 'Feature',
+        properties: { line: ref, type: routeType, name: `${typeName} ${ref}`, color },
+        geometry: { type: 'LineString', coordinates: deduped },
+      });
+    }
   }
 
   return { type: 'FeatureCollection', features };
