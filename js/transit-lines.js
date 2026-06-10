@@ -35,7 +35,7 @@ function setTransitVisible(visible) {
 function initTransitToggle() {
   const btn = document.createElement('button');
   btn.id = 'transit-toggle-btn';
-  btn.innerHTML = '🚋 Linjer';
+  btn.innerHTML = '🚋 Vis trikk';
   btn.title = 'Vis/skjul trikk og T-banelinjer';
   btn.addEventListener('click', () => setTransitVisible(!transitVisible));
   document.body.appendChild(btn);
