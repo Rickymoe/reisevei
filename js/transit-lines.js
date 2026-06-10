@@ -17,6 +17,7 @@ async function loadTransitLines() {
         zIndex: 1,
       });
     });
+    if (transitVisible) transitPolylines.forEach(p => p.setMap(map));
   } catch (err) {
     console.error('Kunne ikke laste kollektivlinjer:', err);
     const btn = document.getElementById('transit-toggle-btn');
@@ -37,6 +38,6 @@ function initTransitToggle() {
   btn.innerHTML = '🚋 Linjer';
   btn.title = 'Vis/skjul trikk og T-banelinjer';
   btn.addEventListener('click', () => setTransitVisible(!transitVisible));
-  document.getElementById('map').appendChild(btn);
+  document.body.appendChild(btn);
   loadTransitLines();
 }
