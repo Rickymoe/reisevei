@@ -29,6 +29,7 @@ function initMap() {
   map.addListener('click', onMapClick);
   setupPanel();
   setDefaultDepartureTime();
+  initTransitToggle();
 }
 
 function onMapClick(e) {
