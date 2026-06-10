@@ -234,7 +234,7 @@ async function onBeregn() {
       }
 
       if (stops.length === 0) {
-        showError(`Finner ingen kollektivstopp innen ${pt.minutes} min. Prøv med lengre reisetid.`);
+        showError('Finner ingen kollektivstopp i nærheten. Punktet kan ligge utenfor Entur-dekning (Norge).');
         return;
       }
 
