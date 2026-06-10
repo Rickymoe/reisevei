@@ -1,0 +1,140 @@
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+
+const QUERY = `
+[out:json][timeout:90];
+(
+  relation["route"="tram"]["network"="Ruter"]["ref"];
+  relation["route"="subway"]["network"="Ruter"]["ref"];
+);
+(._;>;);
+out body;
+`;
+
+const LINE_COLORS = {
+  tram:   { '12': '#E8000D', '13': '#FF6600', '15': '#9B1FA0', '17': '#CC0066', '18': '#E87722', '19': '#A3195B' },
+  subway: { '1':  '#E8000D', '2':  '#003399', '3':  '#009933', '4':  '#9B1FA0', '5':  '#FF6600' },
+};
+
+const OVERPASS_ENDPOINTS = [
+  { hostname: 'overpass-api.de', path: '/api/interpreter' },
+  { hostname: 'overpass.kumi.systems', path: '/api/interpreter' },
+];
+
+function fetchOverpass(query, endpointIndex = 0) {
+  return new Promise((resolve, reject) => {
+    if (endpointIndex >= OVERPASS_ENDPOINTS.length) {
+      return reject(new Error('All Overpass endpoints failed'));
+    }
+    const endpoint = OVERPASS_ENDPOINTS[endpointIndex];
+    console.log(`  Prøver ${endpoint.hostname}...`);
+    const postData = 'data=' + encodeURIComponent(query);
+    const options = {
+      hostname: endpoint.hostname,
+      path: endpoint.path,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData),
+      },
+      timeout: 120000,
+    };
+    const req = https.request(options, res => {
+      let data = '';
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => {
+        if (!data.trimStart().startsWith('{')) {
+          console.log(`  ${endpoint.hostname} returnerte ikke JSON (HTTP ${res.statusCode}), prøver neste...`);
+          fetchOverpass(query, endpointIndex + 1).then(resolve).catch(reject);
+          return;
+        }
+        try {
+          resolve(JSON.parse(data));
+        } catch (e) {
+          console.log(`  JSON parse-feil fra ${endpoint.hostname}, prøver neste...`);
+          fetchOverpass(query, endpointIndex + 1).then(resolve).catch(reject);
+        }
+      });
+    });
+    req.on('error', err => {
+      console.log(`  Feil fra ${endpoint.hostname}: ${err.message}, prøver neste...`);
+      fetchOverpass(query, endpointIndex + 1).then(resolve).catch(reject);
+    });
+    req.on('timeout', () => {
+      req.destroy();
+      console.log(`  Timeout fra ${endpoint.hostname}, prøver neste...`);
+      fetchOverpass(query, endpointIndex + 1).then(resolve).catch(reject);
+    });
+    req.write(postData);
+    req.end();
+  });
+}
+
+function buildGeoJSON(osmData) {
+  const nodeById = {};
+  for (const el of osmData.elements) {
+    if (el.type === 'node') nodeById[el.id] = [el.lon, el.lat];
+  }
+  const wayById = {};
+  for (const el of osmData.elements) {
+    if (el.type === 'way') {
+      wayById[el.id] = el.nodes.map(nid => nodeById[nid]).filter(Boolean);
+    }
+  }
+
+  const seenKey = new Set();
+  const features = [];
+
+  for (const el of osmData.elements) {
+    if (el.type !== 'relation') continue;
+    const routeType = el.tags.route;
+    const ref = el.tags.ref;
+    if (!ref) continue;
+
+    const key = `${routeType}-${ref}`;
+    if (seenKey.has(key)) continue; // keep first relation per line
+    seenKey.add(key);
+
+    const coords = el.members
+      .filter(m => m.type === 'way')
+      .flatMap(m => wayById[m.ref] || []);
+
+    if (coords.length < 2) continue;
+
+    const colorMap = LINE_COLORS[routeType] || {};
+    const color = colorMap[ref] || '#888888';
+    const typeName = routeType === 'tram' ? 'Trikk' : 'T-bane';
+
+    features.push({
+      type: 'Feature',
+      properties: { line: ref, type: routeType, name: `${typeName} ${ref}`, color },
+      geometry: { type: 'LineString', coordinates: coords },
+    });
+  }
+
+  return { type: 'FeatureCollection', features };
+}
+
+async function main() {
+  // Support --from-cache <file> for offline use / testing
+  const cacheArg = process.argv.indexOf('--from-cache');
+  let osmData;
+  if (cacheArg !== -1 && process.argv[cacheArg + 1]) {
+    const cacheFile = process.argv[cacheArg + 1];
+    console.log(`Leser fra lokal cache: ${cacheFile}`);
+    osmData = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+  } else {
+    console.log('Henter fra Overpass API...');
+    osmData = await fetchOverpass(QUERY);
+  }
+  console.log(`Fikk ${osmData.elements.length} elementer`);
+  const geojson = buildGeoJSON(osmData);
+  console.log(`Bygget ${geojson.features.length} linjer:`);
+  geojson.features.forEach(f => console.log(`  ${f.properties.name} (${f.properties.color})`));
+  const outPath = path.join(__dirname, '..', 'js', 'oslo-transit-lines.json');
+  fs.writeFileSync(outPath, JSON.stringify(geojson, null, 2));
+  console.log(`Lagret til js/oslo-transit-lines.json`);
+}
+
+main().catch(console.error);
