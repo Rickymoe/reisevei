@@ -10,8 +10,10 @@ out body;
 `;
 
 const OVERPASS_ENDPOINTS = [
-  { hostname: 'overpass-api.de', path: '/api/interpreter' },
+  { hostname: 'maps.mail.ru', path: '/osm/tools/overpass/api/interpreter' },
   { hostname: 'overpass.kumi.systems', path: '/api/interpreter' },
+  { hostname: 'overpass-api.de', path: '/api/interpreter' },
+  { hostname: 'overpass.openstreetmap.fr', path: '/api/interpreter' },
 ];
 
 function fetchOverpass(query, endpointIndex = 0) {
@@ -21,7 +23,11 @@ function fetchOverpass(query, endpointIndex = 0) {
     }
     const endpoint = OVERPASS_ENDPOINTS[endpointIndex];
     console.error(`  Prøver ${endpoint.hostname}...`);
-    const postData = 'data=' + encodeURIComponent(query);
+    const compactQuery = query
+      .replace(/\s+/g, ' ')    // collapse all whitespace to single spaces
+      .replace(/\s*([;(){}\[\]])\s*/g, '$1')  // remove spaces around syntax chars
+      .trim();
+    const postData = 'data=' + encodeURIComponent(compactQuery);
     const options = {
       hostname: endpoint.hostname,
       path: endpoint.path,
