@@ -124,6 +124,7 @@ function addPoint() {
     walkVisible: false,
     walkGeoJSON: null,
     walkPolygon: null,
+    walkFetching: false,
   });
   document.getElementById('result-btn').classList.add('hidden');
   document.getElementById('result-panel').classList.add('hidden');
@@ -150,7 +151,7 @@ function renderPanel() {
              data-index="${i}" />
       <span class="point-minutes-label">min.</span>
       <button class="walk-btn${pt.walkVisible ? ' active' : ''}" data-index="${i}"
-              title="Vis/skjul gangsone"${pt.lat === null ? ' disabled' : ''}>🚶</button>
+              title="Vis/skjul gangsone"${pt.lat === null || pt.walkFetching ? ' disabled' : ''}>${pt.walkFetching ? '⏳' : '🚶'}</button>
       <button class="remove-btn" data-index="${i}" title="Fjern punkt">×</button>
     `;
     container.appendChild(row);

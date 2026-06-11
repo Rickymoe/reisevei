@@ -54,6 +54,7 @@ async function toggleWalkingPolygon(index) {
     return;
   }
 
+  pt.walkFetching = true;
   const btn = document.querySelector(`.walk-btn[data-index="${index}"]`);
   if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
 
@@ -68,6 +69,7 @@ async function toggleWalkingPolygon(index) {
       ? 'Gang-API er overbelastet. Prøv igjen om litt.'
       : 'Kunne ikke hente gangsone. Prøv igjen.');
   } finally {
+    pt.walkFetching = false;
     if (btn) { btn.textContent = '🚶'; btn.disabled = false; }
   }
 }
@@ -77,4 +79,5 @@ function clearWalkingPolygons() {
     if (pt.walkPolygon) { pt.walkPolygon.setMap(null); pt.walkPolygon = null; }
     pt.walkVisible = false;
   });
+  document.querySelectorAll('.walk-btn.active').forEach(b => b.classList.remove('active'));
 }
