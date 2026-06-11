@@ -171,11 +171,11 @@ function renderPanel() {
              data-index="${i}" />
       <span class="point-minutes-label">min.</span>
       <button class="kollektiv-btn${transitActive ? ' active' : ''}" data-index="${i}"
-              title="Beregn/vis kollektivsone"${pt.lat === null || pt.transitFetching ? ' disabled' : ''}>${pt.transitFetching ? '⏳' : '🚌'}</button>
+              title="Beregn/vis kollektivsone"${pt.lat === null || pt.transitFetching ? ' disabled' : ''}>${pt.transitFetching ? '<span class="spinner"></span>' : '🚌'}</button>
       <button class="walk-btn${pt.walkVisible ? ' active' : ''}" data-index="${i}"
-              title="Vis/skjul gangsone"${pt.lat === null || pt.walkFetching ? ' disabled' : ''}>${pt.walkFetching ? '⏳' : '🚶'}</button>
+              title="Vis/skjul gangsone"${pt.lat === null || pt.walkFetching ? ' disabled' : ''}>${pt.walkFetching ? '<span class="spinner"></span>' : '🚶'}</button>
       <button class="drive-btn${pt.driveVisible ? ' active' : ''}" data-index="${i}"
-              title="Vis/skjul bilsone"${pt.lat === null || pt.driveFetching ? ' disabled' : ''}>${pt.driveFetching ? '⏳' : '🚗'}</button>
+              title="Vis/skjul bilsone"${pt.lat === null || pt.driveFetching ? ' disabled' : ''}>${pt.driveFetching ? '<span class="spinner"></span>' : '🚗'}</button>
       <button class="remove-btn" data-index="${i}" title="Fjern punkt">×</button>
     `;
     container.appendChild(row);

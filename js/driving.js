@@ -59,7 +59,7 @@ async function toggleDrivingPolygon(index) {
 
   pt.driveFetching = true;
   const btn = document.querySelector(`.drive-btn[data-index="${index}"]`);
-  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  if (btn) { btn.innerHTML = '<span class="spinner"></span>'; btn.disabled = true; }
 
   try {
     pt.driveGeoJSON = await fetchDrivingIsochrone(pt.lat, pt.lng, pt.minutes);
@@ -73,7 +73,7 @@ async function toggleDrivingPolygon(index) {
       : `Kunne ikke hente bilsone (${err.message}). Prøv igjen.`);
   } finally {
     pt.driveFetching = false;
-    if (btn) { btn.textContent = '🚗'; btn.disabled = false; }
+    if (btn) { btn.innerHTML = '🚗'; btn.disabled = false; }
   }
 }
 

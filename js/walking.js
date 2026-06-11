@@ -61,7 +61,7 @@ async function toggleWalkingPolygon(index) {
 
   pt.walkFetching = true;
   const btn = document.querySelector(`.walk-btn[data-index="${index}"]`);
-  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  if (btn) { btn.innerHTML = '<span class="spinner"></span>'; btn.disabled = true; }
 
   try {
     pt.walkGeoJSON = await fetchWalkingIsochrone(pt.lat, pt.lng, pt.minutes);
@@ -75,7 +75,7 @@ async function toggleWalkingPolygon(index) {
       : `Kunne ikke hente gangsone (${err.message}). Prøv igjen.`);
   } finally {
     pt.walkFetching = false;
-    if (btn) { btn.textContent = '🚶'; btn.disabled = false; }
+    if (btn) { btn.innerHTML = '🚶'; btn.disabled = false; }
   }
 }
 
