@@ -54,6 +54,9 @@ function setPointCoords(index, lat, lng) {
   if (pt.walkPolygon) { pt.walkPolygon.setMap(null); pt.walkPolygon = null; }
   pt.walkGeoJSON = null;
   pt.walkVisible = false;
+  if (pt.drivePolygon) { pt.drivePolygon.setMap(null); pt.drivePolygon = null; }
+  pt.driveGeoJSON = null;
+  pt.driveVisible = false;
   pt.label = 'Henter adresse...';
 
   if (pt.marker) pt.marker.map = null;
@@ -126,6 +129,10 @@ function addPoint() {
     walkGeoJSON: null,
     walkPolygon: null,
     walkFetching: false,
+    driveVisible: false,
+    driveGeoJSON: null,
+    drivePolygon: null,
+    driveFetching: false,
   });
   document.getElementById('result-btn').classList.add('hidden');
   document.getElementById('result-panel').classList.add('hidden');
@@ -153,6 +160,8 @@ function renderPanel() {
       <span class="point-minutes-label">min.</span>
       <button class="walk-btn${pt.walkVisible ? ' active' : ''}" data-index="${i}"
               title="Vis/skjul gangsone"${pt.lat === null || pt.walkFetching ? ' disabled' : ''}>${pt.walkFetching ? '⏳' : '🚶'}</button>
+      <button class="drive-btn${pt.driveVisible ? ' active' : ''}" data-index="${i}"
+              title="Vis/skjul bilsone"${pt.lat === null || pt.driveFetching ? ' disabled' : ''}>${pt.driveFetching ? '⏳' : '🚗'}</button>
       <button class="remove-btn" data-index="${i}" title="Fjern punkt">×</button>
     `;
     container.appendChild(row);
@@ -168,6 +177,9 @@ function renderPanel() {
   container.querySelectorAll('.walk-btn').forEach(btn => {
     btn.addEventListener('click', e => toggleWalkingPolygon(+e.target.dataset.index));
   });
+  container.querySelectorAll('.drive-btn').forEach(btn => {
+    btn.addEventListener('click', e => toggleDrivingPolygon(+e.target.dataset.index));
+  });
   container.querySelectorAll('.remove-btn').forEach(btn => {
     btn.addEventListener('click', e => removePoint(+e.target.dataset.index));
   });
@@ -182,6 +194,7 @@ function removePoint(index) {
   if (pt.marker) pt.marker.map = null;
   (pt.polygons || []).forEach(p => p.setMap(null));
   if (pt.walkPolygon) { pt.walkPolygon.setMap(null); pt.walkPolygon = null; }
+  if (pt.drivePolygon) { pt.drivePolygon.setMap(null); pt.drivePolygon = null; }
   intersectionPolygons.forEach(p => p.setMap(null));
   intersectionPolygons = [];
   points.splice(index, 1);
@@ -372,6 +385,7 @@ function clearPolygons() {
   intersectionPolygons.forEach(p => p.setMap(null));
   intersectionPolygons = [];
   clearWalkingPolygons();
+  clearDrivingPolygons();
 }
 
 function drawIntersections(activePoints) {

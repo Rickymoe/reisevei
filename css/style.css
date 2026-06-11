@@ -309,7 +309,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   }
 }
 
-.walk-btn {
+.walk-btn, .drive-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -318,9 +318,11 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   border-radius: 4px;
   line-height: 1;
 }
-.walk-btn:disabled { opacity: 0.3; cursor: default; }
+.walk-btn:disabled, .drive-btn:disabled { opacity: 0.3; cursor: default; }
 .walk-btn.active { color: #1a73e8; background: #e8f0fe; }
-.walk-btn:hover:not(:disabled):not(.active) { background: #f5f5f5; }
+.drive-btn.active { color: #e65100; background: #fbe9e7; }
+.walk-btn:hover:not(:disabled):not(.active),
+.drive-btn:hover:not(:disabled):not(.active) { background: #f5f5f5; }
 
 .transit-btn {
   position: absolute;
