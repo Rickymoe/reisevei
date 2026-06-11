@@ -103,6 +103,7 @@ function setupPanel() {
   document.getElementById('result-btn').addEventListener('click', () => {
     document.getElementById('result-panel').classList.remove('hidden');
   });
+  document.getElementById('transit-visibility-btn').addEventListener('click', toggleAllTransit);
   document.querySelector('#result-panel .close-btn').addEventListener('click', () => {
     document.getElementById('result-panel').classList.add('hidden');
   });
@@ -137,6 +138,7 @@ function addPoint() {
   });
   document.getElementById('result-btn').classList.add('hidden');
   document.getElementById('result-panel').classList.add('hidden');
+  document.getElementById('transit-visibility-btn').classList.add('hidden');
   renderPanel();
   startPicking(index);
 }
@@ -159,8 +161,6 @@ function renderPanel() {
       <input class="point-minutes" type="number" min="5" max="120" value="${pt.minutes}"
              data-index="${i}" />
       <span class="point-minutes-label">min.</span>
-      <button class="kollektiv-btn${pt.transitVisible ? ' active' : ''}" data-index="${i}"
-              title="Vis/skjul kollektivsone"${pt.polygons.length === 0 ? ' disabled' : ''}>🚌</button>
       <button class="walk-btn${pt.walkVisible ? ' active' : ''}" data-index="${i}"
               title="Vis/skjul gangsone"${pt.lat === null || pt.walkFetching ? ' disabled' : ''}>${pt.walkFetching ? '⏳' : '🚶'}</button>
       <button class="drive-btn${pt.driveVisible ? ' active' : ''}" data-index="${i}"
@@ -177,9 +177,6 @@ function renderPanel() {
       points[+e.target.dataset.index].minutes = clamped;
     });
   });
-  container.querySelectorAll('.kollektiv-btn').forEach(btn => {
-    btn.addEventListener('click', e => toggleTransitPolygon(+e.target.dataset.index));
-  });
   container.querySelectorAll('.walk-btn').forEach(btn => {
     btn.addEventListener('click', e => toggleWalkingPolygon(+e.target.dataset.index));
   });
@@ -194,14 +191,15 @@ function renderPanel() {
   document.getElementById('beregn-btn').disabled = !hasPoint;
 }
 
-function toggleTransitPolygon(index) {
-  const pt = points[index];
-  if (pt.polygons.length === 0) return;
-  const show = !pt.transitVisible;
-  pt.polygons.forEach(p => p.setMap(show ? map : null));
-  pt.transitVisible = show;
-  document.querySelector(`.kollektiv-btn[data-index="${index}"]`)
-    ?.classList.toggle('active', show);
+function toggleAllTransit() {
+  const anyVisible = points.some(pt => pt.transitVisible);
+  const show = !anyVisible;
+  points.forEach(pt => {
+    pt.polygons.forEach(p => p.setMap(show ? map : null));
+    pt.transitVisible = show;
+  });
+  const btn = document.getElementById('transit-visibility-btn');
+  btn.textContent = show ? 'Skjul kollektiv' : 'Vis kollektiv';
 }
 
 function removePoint(index) {
@@ -217,6 +215,7 @@ function removePoint(index) {
   points.forEach((p, i) => { p.color = POINT_COLORS[i]; });
   document.getElementById('result-btn').classList.add('hidden');
   document.getElementById('result-panel').classList.add('hidden');
+  document.getElementById('transit-visibility-btn').classList.add('hidden');
   if (points.length === 0) { addPoint(); } else { renderPanel(); }
 }
 
@@ -261,6 +260,7 @@ async function onBeregn() {
   beregnBtn.textContent = '⏳';
   document.getElementById('result-btn').classList.add('hidden');
   document.getElementById('result-panel').classList.add('hidden');
+  document.getElementById('transit-visibility-btn').classList.add('hidden');
   clearPolygons();
 
   const myGen = ++beregnGeneration;
@@ -324,6 +324,9 @@ async function onBeregn() {
     buildResultPanel(activePoints);
     renderPanel();
     document.getElementById('result-btn').classList.remove('hidden');
+    const tvBtn = document.getElementById('transit-visibility-btn');
+    tvBtn.textContent = 'Skjul kollektiv';
+    tvBtn.classList.remove('hidden');
   } finally {
     hideProgress();
     const btn = document.getElementById('beregn-btn');
