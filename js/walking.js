@@ -25,15 +25,17 @@ async function fetchWalkingIsochrone(lat, lng, minutes) {
   return await resp.json();
 }
 
+const WALK_COLOR = '#2e7d32';
+
 function drawWalkingPolygon(pt) {
   const coords = pt.walkGeoJSON.features[0].geometry.coordinates[0];
   pt.walkPolygon = new google.maps.Polygon({
     paths: coords.map(([lng, lat]) => ({ lat, lng })),
-    strokeColor: pt.color,
-    strokeOpacity: 0.6,
+    strokeColor: WALK_COLOR,
+    strokeOpacity: 0.7,
     strokeWeight: 2,
-    fillColor: pt.color,
-    fillOpacity: 0.08,
+    fillColor: WALK_COLOR,
+    fillOpacity: 0.12,
     map,
     zIndex: 1,
   });
