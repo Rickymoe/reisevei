@@ -322,6 +322,7 @@ async function onBeregn() {
 
     drawIntersections(activePoints);
     buildResultPanel(activePoints);
+    renderPanel();
     document.getElementById('result-btn').classList.remove('hidden');
   } finally {
     hideProgress();
