@@ -125,6 +125,7 @@ function addPoint() {
     intersectionPolygon: null,
     color: POINT_COLORS[index],
     label: 'Klikk på kartet...',
+    transitVisible: false,
     walkVisible: false,
     walkGeoJSON: null,
     walkPolygon: null,
@@ -158,6 +159,8 @@ function renderPanel() {
       <input class="point-minutes" type="number" min="5" max="120" value="${pt.minutes}"
              data-index="${i}" />
       <span class="point-minutes-label">min.</span>
+      <button class="kollektiv-btn${pt.transitVisible ? ' active' : ''}" data-index="${i}"
+              title="Vis/skjul kollektivsone"${pt.polygons.length === 0 ? ' disabled' : ''}>🚌</button>
       <button class="walk-btn${pt.walkVisible ? ' active' : ''}" data-index="${i}"
               title="Vis/skjul gangsone"${pt.lat === null || pt.walkFetching ? ' disabled' : ''}>${pt.walkFetching ? '⏳' : '🚶'}</button>
       <button class="drive-btn${pt.driveVisible ? ' active' : ''}" data-index="${i}"
@@ -174,6 +177,9 @@ function renderPanel() {
       points[+e.target.dataset.index].minutes = clamped;
     });
   });
+  container.querySelectorAll('.kollektiv-btn').forEach(btn => {
+    btn.addEventListener('click', e => toggleTransitPolygon(+e.target.dataset.index));
+  });
   container.querySelectorAll('.walk-btn').forEach(btn => {
     btn.addEventListener('click', e => toggleWalkingPolygon(+e.target.dataset.index));
   });
@@ -186,6 +192,16 @@ function renderPanel() {
 
   const hasPoint = points.some(p => p.lat !== null);
   document.getElementById('beregn-btn').disabled = !hasPoint;
+}
+
+function toggleTransitPolygon(index) {
+  const pt = points[index];
+  if (pt.polygons.length === 0) return;
+  const show = !pt.transitVisible;
+  pt.polygons.forEach(p => p.setMap(show ? map : null));
+  pt.transitVisible = show;
+  document.querySelector(`.kollektiv-btn[data-index="${index}"]`)
+    ?.classList.toggle('active', show);
 }
 
 function removePoint(index) {
@@ -300,6 +316,7 @@ async function onBeregn() {
         fillOpacity: 0.15,
         map,
       }));
+      pt.transitVisible = true;
       pt._geoPolygon = polygon;
     }
 
@@ -380,6 +397,7 @@ function clearPolygons() {
   points.forEach(pt => {
     (pt.polygons || []).forEach(p => p.setMap(null));
     pt.polygons = [];
+    pt.transitVisible = false;
     pt._geoPolygon = null;
   });
   intersectionPolygons.forEach(p => p.setMap(null));
