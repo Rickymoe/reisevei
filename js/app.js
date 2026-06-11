@@ -30,6 +30,7 @@ function initMap() {
   setupPanel();
   setDefaultDepartureTime();
   initTransitToggle();
+  initBusStopsToggle();
 }
 
 function onMapClick(e) {
