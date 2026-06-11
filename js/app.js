@@ -72,6 +72,7 @@ function setPointCoords(index, lat, lng) {
   intersectionPolygons.forEach(p => p.setMap(null));
   intersectionPolygons = [];
 
+  syncResultPanel();
   pt.label = 'Henter adresse...';
 
   if (pt.marker) pt.marker.map = null;
@@ -83,7 +84,6 @@ function setPointCoords(index, lat, lng) {
     content: dot,
   });
 
-  updateTransitVisibilityBtn();
   renderPanel();
 
   geocoder.geocode({ location: { lat, lng } }, (results, status) => {
@@ -114,10 +114,6 @@ function setDefaultDepartureTime() {
 
 function setupPanel() {
   addPoint();
-  document.getElementById('result-btn').addEventListener('click', () => {
-    document.getElementById('result-panel').classList.remove('hidden');
-  });
-  document.getElementById('transit-visibility-btn').addEventListener('click', toggleAllTransit);
   document.querySelector('#result-panel .close-btn').addEventListener('click', () => {
     document.getElementById('result-panel').classList.add('hidden');
   });
@@ -152,7 +148,6 @@ function addPoint() {
     drivePolygon: null,
     driveFetching: false,
   });
-  updateTransitVisibilityBtn();
   renderPanel();
   startPicking(index);
 }
@@ -217,7 +212,7 @@ async function fetchTransitForPoint(index) {
     pt.polygons.forEach(p => p.setMap(show ? map : null));
     pt.transitVisible = show;
     renderPanel();
-    updateTransitVisibilityBtn();
+    syncResultPanel();
     return;
   }
 
@@ -286,13 +281,7 @@ async function fetchTransitForPoint(index) {
     intersectionPolygons = [];
     drawIntersections(points.filter(p => p.transitCalculated));
 
-    // Update result panel
-    const calculatedPoints = points.filter(p => p.transitCalculated);
-    buildResultPanel(calculatedPoints);
-    document.getElementById('result-btn').classList.remove('hidden');
-    document.getElementById('result-panel').classList.add('hidden');
-
-    updateTransitVisibilityBtn();
+    syncResultPanel();
   } finally {
     pt.transitFetching = false;
     hideProgress();
@@ -300,28 +289,15 @@ async function fetchTransitForPoint(index) {
   }
 }
 
-function updateTransitVisibilityBtn() {
-  const btn = document.getElementById('transit-visibility-btn');
-  const hasCalculated = points.some(p => p.transitCalculated);
-  if (!hasCalculated) {
-    btn.classList.add('hidden');
-    return;
+function syncResultPanel() {
+  const visiblePoints = points.filter(p => p.transitVisible);
+  const panel = document.getElementById('result-panel');
+  if (visiblePoints.length === 0) {
+    panel.classList.add('hidden');
+  } else {
+    buildResultPanel(visiblePoints);
+    panel.classList.remove('hidden');
   }
-  btn.classList.remove('hidden');
-  const anyVisible = points.some(p => p.transitVisible);
-  btn.textContent = anyVisible ? 'Skjul kollektiv' : 'Vis kollektiv';
-}
-
-function toggleAllTransit() {
-  const anyVisible = points.some(pt => pt.transitVisible);
-  const show = !anyVisible;
-  points.forEach(pt => {
-    if (!pt.transitCalculated) return;
-    pt.polygons.forEach(p => p.setMap(show ? map : null));
-    pt.transitVisible = show;
-  });
-  updateTransitVisibilityBtn();
-  renderPanel();
 }
 
 function removePoint(index) {
@@ -335,9 +311,7 @@ function removePoint(index) {
   intersectionPolygons = [];
   points.splice(index, 1);
   points.forEach((p, i) => { p.color = POINT_COLORS[i]; });
-  document.getElementById('result-btn').classList.add('hidden');
-  document.getElementById('result-panel').classList.add('hidden');
-  updateTransitVisibilityBtn();
+  syncResultPanel();
   if (points.length === 0) { addPoint(); } else { renderPanel(); }
 }
 
