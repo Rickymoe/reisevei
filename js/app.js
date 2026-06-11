@@ -50,6 +50,9 @@ function setPointCoords(index, lat, lng) {
   const pt = points[index];
   pt.lat = lat;
   pt.lng = lng;
+  if (pt.walkPolygon) { pt.walkPolygon.setMap(null); pt.walkPolygon = null; }
+  pt.walkGeoJSON = null;
+  pt.walkVisible = false;
   pt.label = 'Henter adresse...';
 
   if (pt.marker) pt.marker.map = null;
@@ -118,6 +121,9 @@ function addPoint() {
     intersectionPolygon: null,
     color: POINT_COLORS[index],
     label: 'Klikk på kartet...',
+    walkVisible: false,
+    walkGeoJSON: null,
+    walkPolygon: null,
   });
   document.getElementById('result-btn').classList.add('hidden');
   document.getElementById('result-panel').classList.add('hidden');
@@ -143,6 +149,8 @@ function renderPanel() {
       <input class="point-minutes" type="number" min="5" max="120" value="${pt.minutes}"
              data-index="${i}" />
       <span class="point-minutes-label">min.</span>
+      <button class="walk-btn${pt.walkVisible ? ' active' : ''}" data-index="${i}"
+              title="Vis/skjul gangsone"${pt.lat === null ? ' disabled' : ''}>🚶</button>
       <button class="remove-btn" data-index="${i}" title="Fjern punkt">×</button>
     `;
     container.appendChild(row);
@@ -154,6 +162,9 @@ function renderPanel() {
       e.target.value = clamped;
       points[+e.target.dataset.index].minutes = clamped;
     });
+  });
+  container.querySelectorAll('.walk-btn').forEach(btn => {
+    btn.addEventListener('click', e => toggleWalkingPolygon(+e.target.dataset.index));
   });
   container.querySelectorAll('.remove-btn').forEach(btn => {
     btn.addEventListener('click', e => removePoint(+e.target.dataset.index));
@@ -167,6 +178,7 @@ function removePoint(index) {
   const pt = points[index];
   if (pt.marker) pt.marker.map = null;
   (pt.polygons || []).forEach(p => p.setMap(null));
+  if (pt.walkPolygon) { pt.walkPolygon.setMap(null); pt.walkPolygon = null; }
   intersectionPolygons.forEach(p => p.setMap(null));
   intersectionPolygons = [];
   points.splice(index, 1);
@@ -349,6 +361,7 @@ function clearPolygons() {
   });
   intersectionPolygons.forEach(p => p.setMap(null));
   intersectionPolygons = [];
+  clearWalkingPolygons();
 }
 
 function drawIntersections(activePoints) {
