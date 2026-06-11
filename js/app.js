@@ -15,6 +15,7 @@ let points = []; // [{ lat, lng, minutes, marker, polygon, color, label }]
 let pickingPointIndex = null;
 let hoverMarker = null;
 let intersectionPolygons = [];
+let beregnGeneration = 0;
 
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
@@ -176,6 +177,7 @@ function renderPanel() {
 }
 
 function removePoint(index) {
+  beregnGeneration++;
   const pt = points[index];
   if (pt.marker) pt.marker.map = null;
   (pt.polygons || []).forEach(p => p.setMap(null));
@@ -232,8 +234,11 @@ async function onBeregn() {
   document.getElementById('result-panel').classList.add('hidden');
   clearPolygons();
 
+  const myGen = ++beregnGeneration;
+
   try {
     for (let i = 0; i < activePoints.length; i++) {
+      if (beregnGeneration !== myGen) { clearPolygons(); return; }
       const pt = activePoints[i];
       showProgress(`Punkt ${i + 1}/${activePoints.length}: henter stopp...`);
 
@@ -257,6 +262,8 @@ async function onBeregn() {
         stops, pt.lat, pt.lng, dateTimeISO,
         (done, total) => showProgress(`Punkt ${i + 1}: beregner reisetider ${done}/${total}...`)
       );
+
+      if (beregnGeneration !== myGen) { clearPolygons(); return; }
 
       pt.reachableStops = stops
         .map((s, j) => ({ name: s.name, id: s.id, lat: s.latitude, lng: s.longitude, duration: durations[j], mode: s.transportMode }))
