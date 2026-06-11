@@ -11,7 +11,7 @@ function isInNorway(lat, lng) {
 
 let map;
 let geocoder;
-let points = []; // [{ lat, lng, minutes, marker, polygon, color, label }]
+let points = [];
 let pickingPointIndex = null;
 let hoverMarker = null;
 let intersectionPolygons = [];
@@ -48,15 +48,30 @@ function onMapClick(e) {
 }
 
 function setPointCoords(index, lat, lng) {
+  beregnGeneration++;
   const pt = points[index];
   pt.lat = lat;
   pt.lng = lng;
+
+  // Clear this point's transit state
+  pt.polygons.forEach(p => p.setMap(null));
+  pt.polygons = [];
+  pt.transitVisible = false;
+  pt.transitCalculated = false;
+  pt._geoPolygon = null;
+
+  // Clear walk/drive state
   if (pt.walkPolygon) { pt.walkPolygon.setMap(null); pt.walkPolygon = null; }
   pt.walkGeoJSON = null;
   pt.walkVisible = false;
   if (pt.drivePolygon) { pt.drivePolygon.setMap(null); pt.drivePolygon = null; }
   pt.driveGeoJSON = null;
   pt.driveVisible = false;
+
+  // Clear intersections (they depended on this point's polygon)
+  intersectionPolygons.forEach(p => p.setMap(null));
+  intersectionPolygons = [];
+
   pt.label = 'Henter adresse...';
 
   if (pt.marker) pt.marker.map = null;
@@ -68,6 +83,7 @@ function setPointCoords(index, lat, lng) {
     content: dot,
   });
 
+  updateTransitVisibilityBtn();
   renderPanel();
 
   geocoder.geocode({ location: { lat, lng } }, (results, status) => {
@@ -92,14 +108,12 @@ function setDefaultDepartureTime() {
   const nextMonday = new Date(now);
   nextMonday.setDate(now.getDate() + daysUntilMonday);
   nextMonday.setHours(8, 0, 0, 0);
-  // datetime-local format: YYYY-MM-DDTHH:MM
   const pad = n => String(n).padStart(2, '0');
   input.value = `${nextMonday.getFullYear()}-${pad(nextMonday.getMonth()+1)}-${pad(nextMonday.getDate())}T08:00`;
 }
 
 function setupPanel() {
-  addPoint(); // start with one point
-  document.getElementById('beregn-btn').addEventListener('click', onBeregn);
+  addPoint();
   document.getElementById('result-btn').addEventListener('click', () => {
     document.getElementById('result-panel').classList.remove('hidden');
   });
@@ -127,6 +141,8 @@ function addPoint() {
     color: POINT_COLORS[index],
     label: 'Klikk på kartet...',
     transitVisible: false,
+    transitCalculated: false,
+    transitFetching: false,
     walkVisible: false,
     walkGeoJSON: null,
     walkPolygon: null,
@@ -136,9 +152,7 @@ function addPoint() {
     drivePolygon: null,
     driveFetching: false,
   });
-  document.getElementById('result-btn').classList.add('hidden');
-  document.getElementById('result-panel').classList.add('hidden');
-  document.getElementById('transit-visibility-btn').classList.add('hidden');
+  updateTransitVisibilityBtn();
   renderPanel();
   startPicking(index);
 }
@@ -148,19 +162,21 @@ function startPicking(index) {
   document.getElementById('map').classList.add('picking-mode');
 }
 
-
 function renderPanel() {
   const container = document.getElementById('points-container');
   container.innerHTML = '';
   points.forEach((pt, i) => {
     const row = document.createElement('div');
     row.className = 'point-row';
+    const transitActive = pt.transitCalculated && pt.transitVisible;
     row.innerHTML = `
       <span class="point-dot" style="background:${pt.color}"></span>
       <span class="point-label" title="${pt.label}">${pt.label}</span>
       <input class="point-minutes" type="number" min="5" max="120" value="${pt.minutes}"
              data-index="${i}" />
       <span class="point-minutes-label">min.</span>
+      <button class="kollektiv-btn${transitActive ? ' active' : ''}" data-index="${i}"
+              title="Beregn/vis kollektivsone"${pt.lat === null || pt.transitFetching ? ' disabled' : ''}>${pt.transitFetching ? '⏳' : '🚌'}</button>
       <button class="walk-btn${pt.walkVisible ? ' active' : ''}" data-index="${i}"
               title="Vis/skjul gangsone"${pt.lat === null || pt.walkFetching ? ' disabled' : ''}>${pt.walkFetching ? '⏳' : '🚶'}</button>
       <button class="drive-btn${pt.driveVisible ? ' active' : ''}" data-index="${i}"
@@ -177,6 +193,9 @@ function renderPanel() {
       points[+e.target.dataset.index].minutes = clamped;
     });
   });
+  container.querySelectorAll('.kollektiv-btn').forEach(btn => {
+    btn.addEventListener('click', e => fetchTransitForPoint(+e.target.dataset.index));
+  });
   container.querySelectorAll('.walk-btn').forEach(btn => {
     btn.addEventListener('click', e => toggleWalkingPolygon(+e.target.dataset.index));
   });
@@ -186,20 +205,123 @@ function renderPanel() {
   container.querySelectorAll('.remove-btn').forEach(btn => {
     btn.addEventListener('click', e => removePoint(+e.target.dataset.index));
   });
+}
 
-  const hasPoint = points.some(p => p.lat !== null);
-  document.getElementById('beregn-btn').disabled = !hasPoint;
+async function fetchTransitForPoint(index) {
+  const pt = points[index];
+  if (!pt.lat) return;
+
+  // If already calculated, just toggle visibility
+  if (pt.transitCalculated) {
+    const show = !pt.transitVisible;
+    pt.polygons.forEach(p => p.setMap(show ? map : null));
+    pt.transitVisible = show;
+    renderPanel();
+    updateTransitVisibilityBtn();
+    return;
+  }
+
+  const departureInput = document.getElementById('departure-time').value;
+  if (!departureInput) { showError('Sett en avgangstid.'); return; }
+  const dateTimeISO = new Date(departureInput).toISOString();
+
+  const myGen = ++beregnGeneration;
+  pt.transitFetching = true;
+  hideError();
+  renderPanel();
+
+  try {
+    showProgress('Henter stopp...');
+    const radius = dynamicRadius(pt.minutes);
+    const maxStops = pt.minutes >= 45 ? 150 : 80;
+    let stops;
+    try {
+      stops = await fetchStopsNearby(pt.lat, pt.lng, radius, maxStops);
+    } catch {
+      showError('Entur er ikke tilgjengelig akkurat nå.');
+      return;
+    }
+
+    if (beregnGeneration !== myGen) return;
+
+    if (stops.length === 0) {
+      showError('Finner ingen kollektivstopp i nærheten. Punktet kan ligge utenfor Entur-dekning (Norge).');
+      return;
+    }
+
+    showProgress(`Beregner reisetider 0/${stops.length}...`);
+    const durations = await batchFetchDurations(
+      stops, pt.lat, pt.lng, dateTimeISO,
+      (done, total) => showProgress(`Beregner reisetider ${done}/${total}...`)
+    );
+
+    if (beregnGeneration !== myGen) return;
+
+    pt.reachableStops = stops
+      .map((s, j) => ({ name: s.name, id: s.id, lat: s.latitude, lng: s.longitude, duration: durations[j], mode: s.transportMode }))
+      .filter(s => s.duration !== null && s.duration <= pt.minutes * 60)
+      .sort((a, b) => a.duration - b.duration);
+
+    const polygon = computeIsochrone(stops, durations, pt.minutes);
+    if (!polygon) {
+      showError(`Finner ikke reiseveier innen ${pt.minutes} min. Prøv med lengre reisetid.`);
+      return;
+    }
+
+    pt.polygons = geoJsonToGooglePaths(polygon).map(path => new google.maps.Polygon({
+      paths: path,
+      strokeColor: pt.color,
+      strokeOpacity: 0.9,
+      strokeWeight: 2,
+      fillColor: pt.color,
+      fillOpacity: 0.15,
+      map,
+    }));
+    pt.transitVisible = true;
+    pt.transitCalculated = true;
+    pt._geoPolygon = polygon;
+
+    // Recompute intersections across all calculated points
+    intersectionPolygons.forEach(p => p.setMap(null));
+    intersectionPolygons = [];
+    drawIntersections(points.filter(p => p.transitCalculated));
+
+    // Update result panel
+    const calculatedPoints = points.filter(p => p.transitCalculated);
+    buildResultPanel(calculatedPoints);
+    document.getElementById('result-btn').classList.remove('hidden');
+    document.getElementById('result-panel').classList.add('hidden');
+
+    updateTransitVisibilityBtn();
+  } finally {
+    pt.transitFetching = false;
+    hideProgress();
+    renderPanel();
+  }
+}
+
+function updateTransitVisibilityBtn() {
+  const btn = document.getElementById('transit-visibility-btn');
+  const hasCalculated = points.some(p => p.transitCalculated);
+  if (!hasCalculated) {
+    btn.classList.add('hidden');
+    return;
+  }
+  btn.classList.remove('hidden');
+  const anyVisible = points.some(p => p.transitVisible);
+  btn.textContent = anyVisible ? 'Skjul kollektiv' : 'Vis kollektiv';
 }
 
 function toggleAllTransit() {
   const anyVisible = points.some(pt => pt.transitVisible);
   const show = !anyVisible;
   points.forEach(pt => {
+    if (!pt.transitCalculated) return;
     pt.polygons.forEach(p => p.setMap(show ? map : null));
     pt.transitVisible = show;
   });
-  const btn = document.getElementById('transit-visibility-btn');
-  btn.textContent = show ? 'Skjul kollektiv' : 'Vis kollektiv';
+  updateTransitVisibilityBtn();
+  renderPanel();
 }
 
 function removePoint(index) {
@@ -215,7 +337,7 @@ function removePoint(index) {
   points.forEach((p, i) => { p.color = POINT_COLORS[i]; });
   document.getElementById('result-btn').classList.add('hidden');
   document.getElementById('result-panel').classList.add('hidden');
-  document.getElementById('transit-visibility-btn').classList.add('hidden');
+  updateTransitVisibilityBtn();
   if (points.length === 0) { addPoint(); } else { renderPanel(); }
 }
 
@@ -237,102 +359,6 @@ function showProgress(text) {
 
 function hideProgress() {
   document.getElementById('progress').classList.add('hidden');
-}
-
-async function onBeregn() {
-  hideError();
-
-  const activePoints = points.filter(p => p.lat !== null);
-  if (activePoints.length === 0) {
-    showError('Klikk på kartet for å sette minst ett punkt.');
-    return;
-  }
-
-  const departureInput = document.getElementById('departure-time').value;
-  if (!departureInput) {
-    showError('Sett en avgangstid.');
-    return;
-  }
-  const dateTimeISO = new Date(departureInput).toISOString();
-
-  const beregnBtn = document.getElementById('beregn-btn');
-  beregnBtn.disabled = true;
-  beregnBtn.textContent = '⏳';
-  document.getElementById('result-btn').classList.add('hidden');
-  document.getElementById('result-panel').classList.add('hidden');
-  document.getElementById('transit-visibility-btn').classList.add('hidden');
-  clearPolygons();
-
-  const myGen = ++beregnGeneration;
-
-  try {
-    for (let i = 0; i < activePoints.length; i++) {
-      if (beregnGeneration !== myGen) { clearPolygons(); return; }
-      const pt = activePoints[i];
-      showProgress(`Punkt ${i + 1}/${activePoints.length}: henter stopp...`);
-
-      const radius = dynamicRadius(pt.minutes);
-      const maxStops = pt.minutes >= 45 ? 150 : 80;
-      let stops;
-      try {
-        stops = await fetchStopsNearby(pt.lat, pt.lng, radius, maxStops);
-      } catch {
-        showError('Entur er ikke tilgjengelig akkurat nå.');
-        return;
-      }
-
-      if (beregnGeneration !== myGen) { clearPolygons(); return; }
-
-      if (stops.length === 0) {
-        showError('Finner ingen kollektivstopp i nærheten. Punktet kan ligge utenfor Entur-dekning (Norge).');
-        return;
-      }
-
-      showProgress(`Punkt ${i + 1}: beregner reisetider 0/${stops.length}...`);
-      const durations = await batchFetchDurations(
-        stops, pt.lat, pt.lng, dateTimeISO,
-        (done, total) => showProgress(`Punkt ${i + 1}: beregner reisetider ${done}/${total}...`)
-      );
-
-      if (beregnGeneration !== myGen) { clearPolygons(); return; }
-
-      pt.reachableStops = stops
-        .map((s, j) => ({ name: s.name, id: s.id, lat: s.latitude, lng: s.longitude, duration: durations[j], mode: s.transportMode }))
-        .filter(s => s.duration !== null && s.duration <= pt.minutes * 60)
-        .sort((a, b) => a.duration - b.duration);
-
-      const polygon = computeIsochrone(stops, durations, pt.minutes);
-      if (!polygon) {
-        showError(`Finner ikke reiseveier innen ${pt.minutes} min. Prøv med lengre reisetid.`);
-        continue;
-      }
-
-      pt.polygons = geoJsonToGooglePaths(polygon).map(path => new google.maps.Polygon({
-        paths: path,
-        strokeColor: pt.color,
-        strokeOpacity: 0.9,
-        strokeWeight: 2,
-        fillColor: pt.color,
-        fillOpacity: 0.15,
-        map,
-      }));
-      pt.transitVisible = true;
-      pt._geoPolygon = polygon;
-    }
-
-    drawIntersections(activePoints);
-    buildResultPanel(activePoints);
-    renderPanel();
-    document.getElementById('result-btn').classList.remove('hidden');
-    const tvBtn = document.getElementById('transit-visibility-btn');
-    tvBtn.textContent = 'Skjul kollektiv';
-    tvBtn.classList.remove('hidden');
-  } finally {
-    hideProgress();
-    const btn = document.getElementById('beregn-btn');
-    btn.disabled = false;
-    btn.textContent = 'Finn reiseveier';
-  }
 }
 
 const TRANSPORT_ICONS = {
@@ -402,6 +428,7 @@ function clearPolygons() {
     (pt.polygons || []).forEach(p => p.setMap(null));
     pt.polygons = [];
     pt.transitVisible = false;
+    pt.transitCalculated = false;
     pt._geoPolygon = null;
   });
   intersectionPolygons.forEach(p => p.setMap(null));
