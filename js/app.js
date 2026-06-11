@@ -252,6 +252,8 @@ async function onBeregn() {
         return;
       }
 
+      if (beregnGeneration !== myGen) { clearPolygons(); return; }
+
       if (stops.length === 0) {
         showError('Finner ingen kollektivstopp i nærheten. Punktet kan ligge utenfor Entur-dekning (Norge).');
         return;
