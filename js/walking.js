@@ -11,7 +11,7 @@ async function fetchWalkingIsochrone(lat, lng, minutes) {
       },
       body: JSON.stringify({
         locations: [[lng, lat]],
-        range: [minutes * 60],
+        range: [Math.round(minutes * 50)],
         range_type: 'time',
       }),
     }
