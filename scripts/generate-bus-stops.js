@@ -37,25 +37,25 @@ function fetchOverpass(query, endpointIndex = 0) {
       res.on('data', chunk => { data += chunk; });
       res.on('end', () => {
         if (!data.trimStart().startsWith('{')) {
-          console.error(`  ${endpoint.hostname} returnerte ikke JSON, prøver neste...`);
+          console.error(`  ${endpoint.hostname} returnerte ikke JSON (HTTP ${res.statusCode}), prøver neste...`);
           fetchOverpass(query, endpointIndex + 1).then(resolve).catch(reject);
           return;
         }
         try {
           resolve(JSON.parse(data));
-        } catch {
+        } catch (e) {
           console.error(`  JSON parse-feil, prøver neste...`);
           fetchOverpass(query, endpointIndex + 1).then(resolve).catch(reject);
         }
       });
     });
     req.on('error', err => {
-      console.error(`  Feil: ${err.message}, prøver neste...`);
+      console.error(`  Feil fra ${endpoint.hostname}: ${err.message}, prøver neste...`);
       fetchOverpass(query, endpointIndex + 1).then(resolve).catch(reject);
     });
     req.on('timeout', () => {
       req.destroy();
-      console.error(`  Timeout, prøver neste...`);
+      console.error(`  Timeout fra ${endpoint.hostname}, prøver neste...`);
       fetchOverpass(query, endpointIndex + 1).then(resolve).catch(reject);
     });
     req.write(postData);
