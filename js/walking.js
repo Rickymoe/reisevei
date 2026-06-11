@@ -18,7 +18,11 @@ async function fetchWalkingIsochrone(lat, lng, minutes) {
     }
   );
   if (resp.status === 429) throw new Error('rate_limit');
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  if (!resp.ok) {
+    const body = await resp.text().catch(() => '');
+    console.error('ORS error', resp.status, body);
+    throw new Error(`HTTP ${resp.status}`);
+  }
   return await resp.json();
 }
 
@@ -67,7 +71,7 @@ async function toggleWalkingPolygon(index) {
     pt.walkGeoJSON = null;
     showError(err.message === 'rate_limit'
       ? 'Gang-API er overbelastet. Prøv igjen om litt.'
-      : 'Kunne ikke hente gangsone. Prøv igjen.');
+      : `Kunne ikke hente gangsone (${err.message}). Prøv igjen.`);
   } finally {
     pt.walkFetching = false;
     if (btn) { btn.textContent = '🚶'; btn.disabled = false; }
