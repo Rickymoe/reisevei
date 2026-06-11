@@ -10,9 +10,8 @@ out body;
 `;
 
 const OVERPASS_ENDPOINTS = [
-  { hostname: 'maps.mail.ru', path: '/osm/tools/overpass/api/interpreter' },
-  { hostname: 'overpass.kumi.systems', path: '/api/interpreter' },
   { hostname: 'overpass-api.de', path: '/api/interpreter' },
+  { hostname: 'overpass.kumi.systems', path: '/api/interpreter' },
   { hostname: 'overpass.openstreetmap.fr', path: '/api/interpreter' },
 ];
 
