@@ -2,13 +2,12 @@ const ORS_API_KEY = 'REDACTED_ORS_KEY_ROTATED';
 
 async function fetchWalkingIsochrone(lat, lng, minutes) {
   const resp = await fetch(
-    'https://api.openrouteservice.org/v2/isochrones/foot-walking',
+    `https://api.openrouteservice.org/v2/isochrones/foot-walking?api_key=${ORS_API_KEY}`,
     {
       method: 'POST',
       headers: {
-        'Authorization': ORS_API_KEY,
-        'Content-Type': 'application/json; charset=utf-8',
-        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Accept': 'application/geo+json',
       },
       body: JSON.stringify({
         locations: [[lng, lat]],
