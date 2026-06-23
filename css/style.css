@@ -357,6 +357,41 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
 #tram-toggle-btn { bottom: 90px; }
 #subway-toggle-btn { bottom: 40px; }
+#planet-toggle-btn { bottom: 140px; }
+
+#planet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+}
+
+#planet-overlay iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+#planet-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  z-index: 10000;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s;
+}
+
+#planet-close-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
 
 .transit-btn.active {
   background: #1a73e8;
