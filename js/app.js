@@ -133,7 +133,6 @@ function addPoint() {
     minutes: DEFAULT_MINUTES,
     marker: null,
     polygons: [],
-    intersectionPolygon: null,
     color: POINT_COLORS[index],
     label: 'Klikk på kartet...',
     transitVisible: false,
@@ -211,6 +210,7 @@ async function fetchTransitForPoint(index) {
     const show = !pt.transitVisible;
     pt.polygons.forEach(p => p.setMap(show ? map : null));
     pt.transitVisible = show;
+    redrawIntersections();
     renderPanel();
     syncResultPanel();
     return;
@@ -276,10 +276,8 @@ async function fetchTransitForPoint(index) {
     pt.transitCalculated = true;
     pt._geoPolygon = polygon;
 
-    // Recompute intersections across all calculated points
-    intersectionPolygons.forEach(p => p.setMap(null));
-    intersectionPolygons = [];
-    drawIntersections(points.filter(p => p.transitCalculated));
+    // Recompute intersections across all visible points
+    redrawIntersections();
 
     syncResultPanel();
   } finally {
@@ -311,6 +309,7 @@ function removePoint(index) {
   intersectionPolygons = [];
   points.splice(index, 1);
   points.forEach((p, i) => { p.color = POINT_COLORS[i]; });
+  redrawIntersections();
   syncResultPanel();
   if (points.length === 0) { addPoint(); } else { renderPanel(); }
 }
@@ -409,6 +408,12 @@ function clearPolygons() {
   intersectionPolygons = [];
   clearWalkingPolygons();
   clearDrivingPolygons();
+}
+
+function redrawIntersections() {
+  intersectionPolygons.forEach(p => p.setMap(null));
+  intersectionPolygons = [];
+  drawIntersections(points.filter(p => p.transitCalculated && p.transitVisible));
 }
 
 function drawIntersections(activePoints) {
