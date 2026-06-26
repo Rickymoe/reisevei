@@ -53,37 +53,5 @@ function initTransitToggle() {
   subwayBtn.addEventListener('click', () => setTypeVisible('subway', !transitVisible.subway));
   document.body.appendChild(subwayBtn);
 
-  // Planet button — opens globe as fullscreen overlay
-  const PLANET_URL = 'https://rickymoe.github.io/globus/';
-  const planetBtn = document.createElement('button');
-  planetBtn.id = 'planet-toggle-btn';
-  planetBtn.className = 'transit-btn';
-  planetBtn.innerHTML = '🌍 Planet';
-  planetBtn.title = 'Åpne Planet Simulator';
-  planetBtn.addEventListener('click', () => openPlanet(PLANET_URL));
-  document.body.appendChild(planetBtn);
-
   loadTransitLines();
-}
-
-function openPlanet(url) {
-  const overlay = document.createElement('div');
-  overlay.id = 'planet-overlay';
-
-  const closeBtn = document.createElement('button');
-  closeBtn.id = 'planet-close-btn';
-  closeBtn.innerHTML = '✕';
-  closeBtn.title = 'Lukk Planet (Escape)';
-  closeBtn.addEventListener('click', () => overlay.remove());
-
-  const iframe = document.createElement('iframe');
-  iframe.src = url;
-  iframe.allowFullscreen = true;
-
-  overlay.appendChild(closeBtn);
-  overlay.appendChild(iframe);
-  document.body.appendChild(overlay);
-
-  const onKey = (e) => { if (e.key === 'Escape') { overlay.remove(); window.removeEventListener('keydown', onKey); } };
-  window.addEventListener('keydown', onKey);
 }
