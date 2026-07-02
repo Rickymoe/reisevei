@@ -1,4 +1,4 @@
-const ORS_API_KEY = 'REDACTED_ORS_KEY_ROTATED';
+const ORS_API_KEY = '%%ORS_API_KEY%%';
 
 async function fetchWalkingIsochrone(lat, lng, minutes) {
   const resp = await fetch(
