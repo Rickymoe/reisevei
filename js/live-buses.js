@@ -110,6 +110,7 @@ async function pollLiveBuses() {
     console.error('Kunne ikke hente sanntidsbusser:', err);
     if (lastFetchedBuses.length === 0) return;
   }
+  if (!liveBusesActive) return;
   renderLiveBusMarkers(filterToVisibleZones(lastFetchedBuses));
 }
 
@@ -126,7 +127,7 @@ function stopLiveBusesPolling() {
 
 function refreshLiveBusesIfActive() {
   const btn = document.getElementById('live-buses-toggle-btn');
-  if (btn) btn.disabled = !hasVisibleTransitZone();
+  if (btn) btn.disabled = !liveBusesActive && !hasVisibleTransitZone();
   if (!liveBusesActive) return;
   if (!hasVisibleTransitZone()) { clearLiveBusMarkers(); return; }
   renderLiveBusMarkers(filterToVisibleZones(lastFetchedBuses));
