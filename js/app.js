@@ -31,6 +31,7 @@ function initMap() {
   setupPanel();
   setDefaultDepartureTime();
   initTransitToggle();
+  initLiveBusesToggle();
 }
 
 function onMapClick(e) {
@@ -414,6 +415,7 @@ function redrawIntersections() {
   intersectionPolygons.forEach(p => p.setMap(null));
   intersectionPolygons = [];
   drawIntersections(points.filter(p => p.transitCalculated && p.transitVisible));
+  refreshLiveBusesIfActive();
 }
 
 function drawIntersections(activePoints) {
