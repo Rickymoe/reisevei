@@ -357,6 +357,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
 #tram-toggle-btn { bottom: 90px; }
 #subway-toggle-btn { bottom: 40px; }
+#live-buses-toggle-btn { bottom: 140px; }
 
 .transit-btn.active {
   background: #1a73e8;
