@@ -72,6 +72,7 @@ function setPointCoords(index, lat, lng) {
   // Clear intersections (they depended on this point's polygon)
   intersectionPolygons.forEach(p => p.setMap(null));
   intersectionPolygons = [];
+  refreshLiveBusesIfActive();
 
   syncResultPanel();
   pt.label = 'Henter adresse...';
