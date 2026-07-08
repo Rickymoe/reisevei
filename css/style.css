@@ -357,7 +357,10 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
 #tram-toggle-btn { bottom: 90px; }
 #subway-toggle-btn { bottom: 40px; }
-#live-buses-toggle-btn { bottom: 140px; }
+/* Live buss / Live trikk buttons position themselves via inline style
+   (bottomPx in createLiveVehicleLayer's opts) so each layer's button and
+   its status pill stay a fixed offset apart regardless of how many
+   live-vehicle layers exist. */
 
 .transit-btn.active {
   background: #1a73e8;
@@ -369,10 +372,9 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   background: #f5f5f5;
 }
 
-#live-buses-status {
+.live-vehicles-status {
   position: absolute;
   right: 10px;
-  bottom: 185px;
   z-index: 10;
   max-width: 220px;
   background: white;

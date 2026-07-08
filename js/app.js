@@ -31,7 +31,13 @@ function initMap() {
   setupPanel();
   setDefaultDepartureTime();
   initTransitToggle();
-  initLiveBusesToggle();
+  liveBusLayer.initToggle();
+  liveTramLayer.initToggle();
+}
+
+function refreshLiveVehiclesIfActive() {
+  liveBusLayer.refreshIfActive();
+  liveTramLayer.refreshIfActive();
 }
 
 function onMapClick(e) {
@@ -72,7 +78,7 @@ function setPointCoords(index, lat, lng) {
   // Clear intersections (they depended on this point's polygon)
   intersectionPolygons.forEach(p => p.setMap(null));
   intersectionPolygons = [];
-  refreshLiveBusesIfActive();
+  refreshLiveVehiclesIfActive();
 
   syncResultPanel();
   pt.label = 'Henter adresse...';
@@ -416,7 +422,7 @@ function redrawIntersections() {
   intersectionPolygons.forEach(p => p.setMap(null));
   intersectionPolygons = [];
   drawIntersections(points.filter(p => p.transitCalculated && p.transitVisible));
-  refreshLiveBusesIfActive();
+  refreshLiveVehiclesIfActive();
 }
 
 function drawIntersections(activePoints) {
