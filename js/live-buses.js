@@ -57,16 +57,23 @@ function filterToVisibleZones(buses) {
   });
 }
 
-function busIcon(bearing) {
+function escapeSvgText(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function busIcon(bearing, line) {
   const rot = Number.isFinite(bearing) ? bearing : 0;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">` +
-    `<circle cx="12" cy="12" r="9" fill="#fbbc04" stroke="#fff" stroke-width="2"/>` +
-    `<g transform="rotate(${rot} 12 12)"><polygon points="12,4 16,12 12,10 8,12" fill="#202124"/></g>` +
+  const label = escapeSvgText((line || '?').toString().slice(0, 3));
+  const fontSize = label.length >= 3 ? 9 : label.length === 2 ? 11 : 13;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">` +
+    `<circle cx="16" cy="16" r="11" fill="#fbbc04" stroke="#fff" stroke-width="2"/>` +
+    `<g transform="rotate(${rot} 16 16)"><polygon points="16,1 19,7 13,7" fill="#202124"/></g>` +
+    `<text x="16" y="17" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="700" fill="#202124">${label}</text>` +
     `</svg>`;
   return {
     url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-    scaledSize: new google.maps.Size(24, 24),
-    anchor: new google.maps.Point(12, 12),
+    scaledSize: new google.maps.Size(32, 32),
+    anchor: new google.maps.Point(16, 16),
   };
 }
 
@@ -78,13 +85,13 @@ function renderLiveBusMarkers(buses) {
     const title = `${bus.line} → ${bus.destination}`;
     if (existing) {
       existing.setPosition({ lat: bus.lat, lng: bus.lng });
-      existing.setIcon(busIcon(bus.bearing));
+      existing.setIcon(busIcon(bus.bearing, bus.line));
       existing.setTitle(title);
     } else {
       const marker = new google.maps.Marker({
         position: { lat: bus.lat, lng: bus.lng },
         map,
-        icon: busIcon(bus.bearing),
+        icon: busIcon(bus.bearing, bus.line),
         title,
         zIndex: 500,
       });
