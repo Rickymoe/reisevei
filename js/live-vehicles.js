@@ -5,19 +5,12 @@
 
 const CLUSTER_CELL_PX = 50;
 
-function hasVisibleTransitZone() {
-  return points.some(p => p.transitCalculated && p.transitVisible);
-}
-
-function filterToVisibleZones(vehicles) {
-  const zones = points
-    .filter(p => p.transitCalculated && p.transitVisible)
-    .map(p => p._geoPolygon);
-  if (zones.length === 0) return [];
-  return vehicles.filter(v => {
-    const pt = turf.point([v.lng, v.lat]);
-    return zones.some(zone => turf.booleanPointInPolygon(pt, zone));
-  });
+// Standalone from any isochrone/point state — shows whatever's on screen,
+// not vehicles inside a computed travel-time zone.
+function filterToMapBounds(vehicles) {
+  const bounds = map.getBounds();
+  if (!bounds) return [];
+  return vehicles.filter(v => bounds.contains({ lat: v.lat, lng: v.lng }));
 }
 
 function escapeSvgText(str) {
@@ -188,7 +181,7 @@ function createLiveVehicleLayer(opts) {
   function updateStatus() {
     const el = document.getElementById(opts.statusId);
     if (!el) return;
-    if (!active || !hasVisibleTransitZone()) {
+    if (!active) {
       el.style.display = 'none';
       return;
     }
@@ -197,9 +190,9 @@ function createLiveVehicleLayer(opts) {
       el.style.display = 'block';
       return;
     }
-    const visibleCount = filterToVisibleZones(lastFetched).length;
+    const visibleCount = filterToMapBounds(lastFetched).length;
     if (visibleCount === 0) {
-      el.textContent = `Ingen sanntids${opts.nounPlural} tilgjengelig i dette området akkurat nå`;
+      el.textContent = `Ingen sanntids${opts.nounPlural} synlig i kartutsnittet akkurat nå`;
       el.style.display = 'block';
     } else {
       el.style.display = 'none';
@@ -207,11 +200,6 @@ function createLiveVehicleLayer(opts) {
   }
 
   async function poll() {
-    if (!hasVisibleTransitZone()) {
-      clear();
-      updateStatus();
-      return;
-    }
     try {
       lastFetched = await fetchVehicles();
       lastFetchFailed = false;
@@ -221,7 +209,7 @@ function createLiveVehicleLayer(opts) {
       if (lastFetched.length === 0) { updateStatus(); return; }
     }
     if (!active) return;
-    render(filterToVisibleZones(lastFetched));
+    render(filterToMapBounds(lastFetched));
     updateStatus();
   }
 
@@ -237,11 +225,8 @@ function createLiveVehicleLayer(opts) {
   }
 
   function refreshIfActive() {
-    const btn = document.getElementById(opts.buttonId);
-    if (btn) btn.disabled = !active && !hasVisibleTransitZone();
     if (!active) return;
-    if (!hasVisibleTransitZone()) { clear(); updateStatus(); return; }
-    render(filterToVisibleZones(lastFetched));
+    render(filterToMapBounds(lastFetched));
     updateStatus();
   }
 
@@ -252,7 +237,6 @@ function createLiveVehicleLayer(opts) {
     btn.innerHTML = opts.buttonLabel;
     btn.title = opts.buttonTitle;
     btn.style.bottom = `${opts.bottomPx}px`;
-    btn.disabled = !hasVisibleTransitZone();
     btn.addEventListener('click', () => {
       active = !active;
       btn.classList.toggle('active', active);
@@ -272,9 +256,10 @@ function createLiveVehicleLayer(opts) {
     status.style.display = 'none';
     document.body.appendChild(status);
 
-    // Re-cluster/redraw on zoom without waiting for the next poll —
-    // clustering is purely a function of current zoom + already-fetched data.
-    map.addListener('zoom_changed', refreshIfActive);
+    // Re-cluster/redraw once panning or zooming settles, without waiting
+    // for the next poll — rendering is purely a function of current map
+    // bounds/zoom + already-fetched data, no new fetch needed.
+    map.addListener('idle', refreshIfActive);
   }
 
   return { initToggle, refreshIfActive };

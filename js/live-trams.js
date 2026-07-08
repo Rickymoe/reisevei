@@ -7,7 +7,7 @@ const liveTramLayer = createLiveVehicleLayer({
   buttonId: 'live-trams-toggle-btn',
   statusId: 'live-trams-status',
   buttonLabel: '🚋 Live trikk',
-  buttonTitle: 'Vis/skjul sanntidstrikker i kollektivsonen',
+  buttonTitle: 'Vis/skjul sanntidstrikker i kartutsnittet',
   bottomPx: 240,
   noun: 'trikk',
   nounPlural: 'trikker',
