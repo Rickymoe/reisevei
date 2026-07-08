@@ -57,8 +57,60 @@ function filterToVisibleZones(buses) {
   });
 }
 
+const CLUSTER_CELL_PX = 50;
+
 function escapeSvgText(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Buckets buses into a screen-pixel grid (not a fixed geo-distance) so
+// clustering adapts automatically to zoom: same grouping behavior whether
+// zoomed to a neighborhood or a whole county.
+function clusterBuses(buses) {
+  const projection = map.getProjection();
+  if (!projection) return buses.map(bus => ({ type: 'bus', bus }));
+  const scale = Math.pow(2, map.getZoom());
+  const groups = new Map();
+  for (const bus of buses) {
+    const worldPoint = projection.fromLatLngToPoint(new google.maps.LatLng(bus.lat, bus.lng));
+    const cellX = Math.floor((worldPoint.x * scale) / CLUSTER_CELL_PX);
+    const cellY = Math.floor((worldPoint.y * scale) / CLUSTER_CELL_PX);
+    const key = `${cellX}:${cellY}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(bus);
+  }
+  const items = [];
+  for (const [key, group] of groups) {
+    if (group.length === 1) {
+      items.push({ type: 'bus', bus: group[0] });
+    } else {
+      items.push({
+        type: 'cluster',
+        id: `cluster:${key}`,
+        lat: group.reduce((sum, b) => sum + b.lat, 0) / group.length,
+        lng: group.reduce((sum, b) => sum + b.lng, 0) / group.length,
+        count: group.length,
+      });
+    }
+  }
+  return items;
+}
+
+function clusterIcon(count) {
+  const label = count > 99 ? '99+' : String(count);
+  const radius = count > 9 ? 13 : 11;
+  const size = radius * 2 + 4;
+  const c = size / 2;
+  const fontSize = label.length >= 3 ? 10 : 12;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
+    `<circle cx="${c}" cy="${c}" r="${radius}" fill="#1a73e8" stroke="#fff" stroke-width="2"/>` +
+    `<text x="${c}" y="${c + 1}" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="700" fill="#fff">${label}</text>` +
+    `</svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(size, size),
+    anchor: new google.maps.Point(c, c),
+  };
 }
 
 function busIcon(bearing, line) {
@@ -79,7 +131,28 @@ function busIcon(bearing, line) {
 
 function renderLiveBusMarkers(buses) {
   const seen = new Set();
-  buses.forEach(bus => {
+  clusterBuses(buses).forEach(item => {
+    if (item.type === 'cluster') {
+      seen.add(item.id);
+      const existing = liveBusMarkers.get(item.id);
+      const title = `${item.count} busser`;
+      if (existing) {
+        existing.setPosition({ lat: item.lat, lng: item.lng });
+        existing.setIcon(clusterIcon(item.count));
+        existing.setTitle(title);
+      } else {
+        const marker = new google.maps.Marker({
+          position: { lat: item.lat, lng: item.lng },
+          map,
+          icon: clusterIcon(item.count),
+          title,
+          zIndex: 501,
+        });
+        liveBusMarkers.set(item.id, marker);
+      }
+      return;
+    }
+    const bus = item.bus;
     seen.add(bus.id);
     const existing = liveBusMarkers.get(bus.id);
     const title = `${bus.line} → ${bus.destination}`;
@@ -194,4 +267,8 @@ function initLiveBusesToggle() {
   status.id = 'live-buses-status';
   status.style.display = 'none';
   document.body.appendChild(status);
+
+  // Re-cluster/redraw on zoom without waiting for the next 20s poll —
+  // clustering is purely a function of current zoom + already-fetched buses.
+  map.addListener('zoom_changed', refreshLiveBusesIfActive);
 }
