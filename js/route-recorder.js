@@ -8,6 +8,7 @@ function onLoypeRouteClick(e) {
   routePoints.push({ lat: e.latLng.lat(), lng: e.latLng.lng() });
   redrawRoutePolyline();
   updateLoypeControls();
+  recalcRoute();
 }
 
 function redrawRoutePolyline() {
@@ -29,6 +30,7 @@ function undoLastRoutePoint() {
   routePoints.pop();
   redrawRoutePolyline();
   updateLoypeControls();
+  recalcRoute();
 }
 
 function clearRoute() {
@@ -54,9 +56,26 @@ function hideLoypeError() {
   document.getElementById('loype-error-msg').classList.add('hidden');
 }
 
+function recalcRoute() {
+  if (routePoints.length < 2) {
+    document.getElementById('loype-result').classList.add('hidden');
+    return;
+  }
+  hideLoypeError();
+  const mirror = document.getElementById('loype-mirror-checkbox').checked;
+
+  const line = turf.lineString(routePoints.map(p => [p.lng, p.lat]));
+  let km = turf.length(line, { units: 'kilometers' });
+  if (mirror) km *= 2;
+
+  document.getElementById('loype-distance-value').textContent = `${km.toFixed(2)} km`;
+  document.getElementById('loype-result').classList.remove('hidden');
+}
+
 function initLoypePanel() {
   document.getElementById('loype-undo-btn').addEventListener('click', undoLastRoutePoint);
   document.getElementById('loype-clear-btn').addEventListener('click', clearRoute);
+  document.getElementById('loype-mirror-checkbox').addEventListener('change', recalcRoute);
   updateLoypeControls();
 }
 
