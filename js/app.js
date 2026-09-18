@@ -41,6 +41,7 @@ function refreshLiveVehiclesIfActive() {
 }
 
 function onMapClick(e) {
+  if (getMode() !== 'reisevei') return;
   if (pickingPointIndex === null) return;
   const lat = e.latLng.lat();
   const lng = e.latLng.lng();

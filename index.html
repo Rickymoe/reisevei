@@ -10,6 +10,11 @@
   <div id="map"></div>
 
   <div id="left-column">
+    <div id="mode-switch">
+      <button id="mode-reisevei-btn" class="mode-btn active">🧭 Reisevei</button>
+      <button id="mode-loype-btn" class="mode-btn">🥾 Løyperute</button>
+    </div>
+
     <div id="panel">
       <div class="panel-header">
         <h2>Reisevei</h2>
@@ -59,6 +64,7 @@
   <script src="js/live-trams.js"></script>
   <script src="js/walking.js"></script>
   <script src="js/driving.js"></script>
+  <script src="js/mode-switch.js"></script>
   <script src="js/app.js"></script>
   <script
     src="https://maps.googleapis.com/maps/api/js?key=%%GOOGLE_MAPS_API_KEY%%&libraries=marker&callback=initMap"
