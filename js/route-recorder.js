@@ -79,26 +79,24 @@ function hideLoypeError() {
 }
 
 async function fetchRouteElevation(points) {
-  const resp = await fetch(`https://api.openrouteservice.org/elevation/line?api_key=${ORS_API_KEY}`, {
+  const resp = await fetch('https://api.open-elevation.com/api/v1/lookup', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     },
     body: JSON.stringify({
-      format_in: 'polyline',
-      format_out: 'geojson',
-      geometry: points.map(p => [p.lng, p.lat]),
+      locations: points.map(p => ({ latitude: p.lat, longitude: p.lng })),
     }),
   });
   if (resp.status === 429) throw new Error('rate_limit');
   if (!resp.ok) {
     const body = await resp.text().catch(() => '');
-    console.error('ORS elevation error', resp.status, body);
+    console.error('Open-Elevation error', resp.status, body);
     throw new Error(`HTTP ${resp.status}`);
   }
   const data = await resp.json();
-  return data.geometry.coordinates.map(c => c[2]);
+  return data.results.map(r => r.elevation);
 }
 
 function renderElevationChart(elevations) {
@@ -129,6 +127,7 @@ let loypeCalcGeneration = 0;
 
 async function recalcRoute() {
   if (routePoints.length < 2) {
+    hideLoypeError();
     document.getElementById('loype-result').classList.add('hidden');
     return;
   }
