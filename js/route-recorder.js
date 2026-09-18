@@ -78,19 +78,86 @@ function hideLoypeError() {
   document.getElementById('loype-error-msg').classList.add('hidden');
 }
 
-function recalcRoute() {
+async function fetchRouteElevation(points) {
+  const resp = await fetch(`https://api.openrouteservice.org/elevation/line?api_key=${ORS_API_KEY}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({
+      format_in: 'polyline',
+      format_out: 'geojson',
+      geometry: points.map(p => [p.lng, p.lat]),
+    }),
+  });
+  if (resp.status === 429) throw new Error('rate_limit');
+  if (!resp.ok) {
+    const body = await resp.text().catch(() => '');
+    console.error('ORS elevation error', resp.status, body);
+    throw new Error(`HTTP ${resp.status}`);
+  }
+  const data = await resp.json();
+  return data.geometry.coordinates.map(c => c[2]);
+}
+
+function renderElevationChart(elevations) {
+  const svg = document.getElementById('loype-elevation-chart');
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const width = 240, height = 90, pad = 4;
+  const min = Math.min(...elevations);
+  const max = Math.max(...elevations);
+  const range = Math.max(max - min, 1);
+
+  const stepX = elevations.length > 1 ? (width - pad * 2) / (elevations.length - 1) : 0;
+  const pointsAttr = elevations.map((e, i) => {
+    const x = pad + i * stepX;
+    const y = pad + (1 - (e - min) / range) * (height - pad * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+
+  const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  polyline.setAttribute('points', pointsAttr);
+  polyline.setAttribute('fill', 'none');
+  polyline.setAttribute('stroke', LOYPE_LINE_COLOR);
+  polyline.setAttribute('stroke-width', '2');
+  svg.appendChild(polyline);
+}
+
+let loypeCalcGeneration = 0;
+
+async function recalcRoute() {
   if (routePoints.length < 2) {
     document.getElementById('loype-result').classList.add('hidden');
     return;
   }
   hideLoypeError();
+  const generation = ++loypeCalcGeneration;
   const mirror = document.getElementById('loype-mirror-checkbox').checked;
 
   const line = turf.lineString(routePoints.map(p => [p.lng, p.lat]));
   let km = turf.length(line, { units: 'kilometers' });
   if (mirror) km *= 2;
 
+  let elevations;
+  try {
+    elevations = await fetchRouteElevation(routePoints);
+  } catch (err) {
+    if (generation !== loypeCalcGeneration) return;
+    showLoypeError(err.message === 'rate_limit'
+      ? 'Høyde-API er overbelastet. Prøv igjen om litt.'
+      : `Kunne ikke hente høydedata (${err.message}). Prøv igjen.`);
+    return;
+  }
+  if (generation !== loypeCalcGeneration) return;
+
+  if (mirror) {
+    elevations = elevations.concat(elevations.slice(0, -1).reverse());
+  }
+
   document.getElementById('loype-distance-value').textContent = `${km.toFixed(2)} km`;
+  renderElevationChart(elevations);
   document.getElementById('loype-result').classList.remove('hidden');
 }
 
