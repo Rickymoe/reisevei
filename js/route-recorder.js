@@ -2,11 +2,13 @@ const LOYPE_LINE_COLOR = '#2e7d32';
 
 let routePoints = [];
 let routePolyline = null;
+let routeMarkers = [];
 
 function onLoypeRouteClick(e) {
   if (getMode() !== 'loype') return;
   routePoints.push({ lat: e.latLng.lat(), lng: e.latLng.lng() });
   redrawRoutePolyline();
+  redrawRouteMarkers();
   updateLoypeControls();
   recalcRoute();
 }
@@ -26,9 +28,23 @@ function redrawRoutePolyline() {
   });
 }
 
+function redrawRouteMarkers() {
+  routeMarkers.forEach(m => { m.map = null; });
+  routeMarkers = routePoints.map(pt => {
+    const dot = document.createElement('div');
+    dot.style.cssText = `width:12px;height:12px;border-radius:50%;background:${LOYPE_LINE_COLOR};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)`;
+    return new google.maps.marker.AdvancedMarkerElement({
+      position: pt,
+      map,
+      content: dot,
+    });
+  });
+}
+
 function undoLastRoutePoint() {
   routePoints.pop();
   redrawRoutePolyline();
+  redrawRouteMarkers();
   updateLoypeControls();
   recalcRoute();
 }
@@ -36,6 +52,7 @@ function undoLastRoutePoint() {
 function clearRoute() {
   routePoints = [];
   redrawRoutePolyline();
+  redrawRouteMarkers();
   updateLoypeControls();
   hideLoypeError();
   document.getElementById('loype-result').classList.add('hidden');
@@ -43,6 +60,7 @@ function clearRoute() {
 
 function setLoypeMapVisible(visible) {
   if (routePolyline) routePolyline.setMap(visible ? map : null);
+  routeMarkers.forEach(m => { m.map = visible ? map : null; });
 }
 
 function updateLoypeControls() {
