@@ -28,6 +28,7 @@ function initMap() {
   geocoder = new google.maps.Geocoder();
 
   map.addListener('click', onMapClick);
+  map.addListener('click', onLoypeRouteClick);
   setupPanel();
   setDefaultDepartureTime();
   initTransitToggle();
