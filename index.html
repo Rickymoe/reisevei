@@ -41,6 +41,26 @@
       <h3>Se reiseveier</h3>
       <div id="result-content"></div>
     </div>
+
+    <div id="loype-panel" class="hidden">
+      <div class="panel-header">
+        <h2>Løyperute</h2>
+      </div>
+      <p class="loype-instructions">Klikk på kartet for å legge til punkter langs ruten din, i rekkefølge.</p>
+      <label class="loype-checkbox">
+        <input type="checkbox" id="loype-mirror-checkbox" />
+        Speil retur (frem og tilbake)
+      </label>
+      <div class="loype-controls">
+        <button id="loype-undo-btn" class="loype-btn" disabled>Angre siste punkt</button>
+        <button id="loype-clear-btn" class="loype-btn" disabled>Tøm rute</button>
+      </div>
+      <div id="loype-error-msg" class="hidden"></div>
+      <div id="loype-result" class="hidden">
+        <div id="loype-distance-value"></div>
+        <svg id="loype-elevation-chart" viewBox="0 0 240 90" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
   </div>
 
   <div id="info-panel" class="hidden">
