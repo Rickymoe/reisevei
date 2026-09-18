@@ -49,6 +49,9 @@ function setReiseveiMapVisible(visible) {
     if (pt.drivePolygon) pt.drivePolygon.setMap(visible && pt.driveVisible ? map : null);
   });
   intersectionPolygons.forEach(p => p.setMap(visible ? map : null));
+  for (const type of ['tram', 'subway']) {
+    transitPolylinesByType[type].forEach(p => p.setMap(visible && transitVisible[type] ? map : null));
+  }
 }
 
 function onMapClick(e) {
@@ -298,6 +301,7 @@ async function fetchTransitForPoint(index) {
 
     // Recompute intersections across all visible points
     redrawIntersections();
+    setReiseveiMapVisible(getMode() === 'reisevei');
 
     syncResultPanel();
   } finally {
@@ -308,8 +312,12 @@ async function fetchTransitForPoint(index) {
 }
 
 function syncResultPanel() {
-  const visiblePoints = points.filter(p => p.transitVisible);
   const panel = document.getElementById('result-panel');
+  if (getMode() !== 'reisevei') {
+    panel.classList.add('hidden');
+    return;
+  }
+  const visiblePoints = points.filter(p => p.transitVisible);
   if (visiblePoints.length === 0) {
     panel.classList.add('hidden');
   } else {

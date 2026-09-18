@@ -54,8 +54,7 @@ function clearRoute() {
   redrawRoutePolyline();
   redrawRouteMarkers();
   updateLoypeControls();
-  hideLoypeError();
-  document.getElementById('loype-result').classList.add('hidden');
+  recalcRoute();
 }
 
 function setLoypeMapVisible(visible) {
@@ -102,11 +101,16 @@ async function fetchRouteElevation(points) {
 function renderElevationChart(elevations) {
   const svg = document.getElementById('loype-elevation-chart');
   while (svg.firstChild) svg.removeChild(svg.firstChild);
+  if (elevations.length === 0) return;
 
   const width = 240, height = 90, pad = 4;
   const min = Math.min(...elevations);
   const max = Math.max(...elevations);
   const range = Math.max(max - min, 1);
+
+  const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+  title.textContent = `Høydeprofil: ${Math.round(min)}–${Math.round(max)} m`;
+  svg.appendChild(title);
 
   const stepX = elevations.length > 1 ? (width - pad * 2) / (elevations.length - 1) : 0;
   const pointsAttr = elevations.map((e, i) => {
@@ -126,18 +130,22 @@ function renderElevationChart(elevations) {
 let loypeCalcGeneration = 0;
 
 async function recalcRoute() {
+  const generation = ++loypeCalcGeneration;
   if (routePoints.length < 2) {
     hideLoypeError();
     document.getElementById('loype-result').classList.add('hidden');
     return;
   }
   hideLoypeError();
-  const generation = ++loypeCalcGeneration;
   const mirror = document.getElementById('loype-mirror-checkbox').checked;
 
   const line = turf.lineString(routePoints.map(p => [p.lng, p.lat]));
   let km = turf.length(line, { units: 'kilometers' });
   if (mirror) km *= 2;
+
+  document.getElementById('loype-distance-value').textContent = `${km.toFixed(2)} km`;
+  renderElevationChart([]);
+  document.getElementById('loype-result').classList.remove('hidden');
 
   let elevations;
   try {
@@ -155,9 +163,7 @@ async function recalcRoute() {
     elevations = elevations.concat(elevations.slice(0, -1).reverse());
   }
 
-  document.getElementById('loype-distance-value').textContent = `${km.toFixed(2)} km`;
   renderElevationChart(elevations);
-  document.getElementById('loype-result').classList.remove('hidden');
 }
 
 function initLoypePanel() {

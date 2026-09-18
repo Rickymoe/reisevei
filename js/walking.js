@@ -67,6 +67,7 @@ async function toggleWalkingPolygon(index) {
     pt.walkGeoJSON = await fetchWalkingIsochrone(pt.lat, pt.lng, pt.minutes);
     drawWalkingPolygon(pt);
     pt.walkVisible = true;
+    setReiseveiMapVisible(getMode() === 'reisevei');
     if (btn) btn.classList.add('active');
   } catch (err) {
     pt.walkGeoJSON = null;

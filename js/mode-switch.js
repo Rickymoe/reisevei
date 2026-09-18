@@ -22,6 +22,7 @@ function setMode(mode) {
 }
 
 function initModeSwitch() {
+  document.body.dataset.mode = 'reisevei';
   document.getElementById('mode-reisevei-btn').addEventListener('click', () => setMode('reisevei'));
   document.getElementById('mode-loype-btn').addEventListener('click', () => setMode('loype'));
 }

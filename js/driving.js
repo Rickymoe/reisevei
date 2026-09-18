@@ -65,6 +65,7 @@ async function toggleDrivingPolygon(index) {
     pt.driveGeoJSON = await fetchDrivingIsochrone(pt.lat, pt.lng, pt.minutes);
     drawDrivingPolygon(pt);
     pt.driveVisible = true;
+    setReiseveiMapVisible(getMode() === 'reisevei');
     if (btn) btn.classList.add('active');
   } catch (err) {
     pt.driveGeoJSON = null;
