@@ -41,6 +41,16 @@ function refreshLiveVehiclesIfActive() {
   liveTramLayer.refreshIfActive();
 }
 
+function setReiseveiMapVisible(visible) {
+  points.forEach(pt => {
+    if (pt.marker) pt.marker.map = visible ? map : null;
+    pt.polygons.forEach(p => p.setMap(visible && pt.transitVisible ? map : null));
+    if (pt.walkPolygon) pt.walkPolygon.setMap(visible && pt.walkVisible ? map : null);
+    if (pt.drivePolygon) pt.drivePolygon.setMap(visible && pt.driveVisible ? map : null);
+  });
+  intersectionPolygons.forEach(p => p.setMap(visible ? map : null));
+}
+
 function onMapClick(e) {
   if (getMode() !== 'reisevei') return;
   if (pickingPointIndex === null) return;

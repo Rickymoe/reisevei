@@ -17,6 +17,8 @@ function setMode(mode) {
   } else {
     document.getElementById('result-panel').classList.add('hidden');
   }
+  setReiseveiMapVisible(mode === 'reisevei');
+  setLoypeMapVisible(mode === 'loype');
 }
 
 function initModeSwitch() {

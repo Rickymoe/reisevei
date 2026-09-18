@@ -41,6 +41,10 @@ function clearRoute() {
   document.getElementById('loype-result').classList.add('hidden');
 }
 
+function setLoypeMapVisible(visible) {
+  if (routePolyline) routePolyline.setMap(visible ? map : null);
+}
+
 function updateLoypeControls() {
   document.getElementById('loype-undo-btn').disabled = routePoints.length === 0;
   document.getElementById('loype-clear-btn').disabled = routePoints.length === 0;
