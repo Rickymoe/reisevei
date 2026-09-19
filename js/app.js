@@ -17,6 +17,15 @@ let hoverMarker = null;
 let intersectionPolygons = [];
 let beregnGeneration = 0;
 
+function initPanelCollapse(panelId, buttonId) {
+  const panel = document.getElementById(panelId);
+  const btn = document.getElementById(buttonId);
+  btn.addEventListener('click', () => {
+    const collapsed = panel.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▸' : '▾';
+  });
+}
+
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
     center: { lat: 59.9139, lng: 10.7522 },
@@ -29,8 +38,6 @@ function initMap() {
   geocoder = new google.maps.Geocoder();
 
   map.addListener('click', onMapClick);
-  map.addListener('click', onLoypeRouteClick);
-  map.addListener('rightclick', onLoypeRouteRightClick);
   setupPanel();
   setDefaultDepartureTime();
   initTransitToggle();
@@ -43,21 +50,7 @@ function refreshLiveVehiclesIfActive() {
   liveTramLayer.refreshIfActive();
 }
 
-function setReiseveiMapVisible(visible) {
-  points.forEach(pt => {
-    if (pt.marker) pt.marker.map = visible ? map : null;
-    pt.polygons.forEach(p => p.setMap(visible && pt.transitVisible ? map : null));
-    if (pt.walkPolygon) pt.walkPolygon.setMap(visible && pt.walkVisible ? map : null);
-    if (pt.drivePolygon) pt.drivePolygon.setMap(visible && pt.driveVisible ? map : null);
-  });
-  intersectionPolygons.forEach(p => p.setMap(visible ? map : null));
-  for (const type of ['tram', 'subway']) {
-    transitPolylinesByType[type].forEach(p => p.setMap(visible && transitVisible[type] ? map : null));
-  }
-}
-
 function onMapClick(e) {
-  if (getMode() !== 'reisevei') return;
   if (pickingPointIndex === null) return;
   const lat = e.latLng.lat();
   const lng = e.latLng.lng();
@@ -304,7 +297,6 @@ async function fetchTransitForPoint(index) {
 
     // Recompute intersections across all visible points
     redrawIntersections();
-    setReiseveiMapVisible(getMode() === 'reisevei');
 
     syncResultPanel();
   } finally {
@@ -315,12 +307,8 @@ async function fetchTransitForPoint(index) {
 }
 
 function syncResultPanel() {
-  const panel = document.getElementById('result-panel');
-  if (getMode() !== 'reisevei') {
-    panel.classList.add('hidden');
-    return;
-  }
   const visiblePoints = points.filter(p => p.transitVisible);
+  const panel = document.getElementById('result-panel');
   if (visiblePoints.length === 0) {
     panel.classList.add('hidden');
   } else {
