@@ -12,6 +12,7 @@ function setMode(mode) {
   document.getElementById('mode-loype-btn').classList.toggle('active', mode === 'loype');
   document.getElementById('panel').classList.toggle('hidden', mode !== 'reisevei');
   document.getElementById('loype-panel')?.classList.toggle('hidden', mode !== 'loype');
+  document.getElementById('info-panel').classList.add('hidden');
   if (mode === 'reisevei') {
     syncResultPanel();
   } else {
