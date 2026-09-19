@@ -241,7 +241,7 @@ function addDetailLabel(profile, point, name) {
   svg.appendChild(dot);
 
   const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-  label.setAttribute('x', String(Math.min(Math.max(x, 60), 900 - 20)));
+  label.setAttribute('x', String(Math.min(Math.max(x, 100), 900 - 100)));
   label.setAttribute('y', String(Math.max(y - 10, 14)));
   label.setAttribute('text-anchor', 'middle');
   label.setAttribute('font-size', '12');
