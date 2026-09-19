@@ -45,11 +45,59 @@ function buildDistanceProfile() {
   return profile;
 }
 
-function gradeColor(grade) {
-  if (grade < 0.03) return '#8bc34a';
-  if (grade < 0.06) return '#ffc107';
-  if (grade < 0.10) return '#ff9800';
-  return '#e53935';
+const GRADE_BUCKETS = [
+  { max: 0.03, base: '#8bc34a', light: '#dcedc8' },
+  { max: 0.06, base: '#ffc107', light: '#fff3cd' },
+  { max: 0.10, base: '#ff9800', light: '#ffe0b2' },
+  { max: Infinity, base: '#e53935', light: '#ffcdd2' },
+];
+
+function gradeBucketIndex(grade) {
+  return GRADE_BUCKETS.findIndex(b => grade < b.max);
+}
+
+// Bygger en lys-til-mørk gradient per stigningsfarge, så profilen får litt
+// dybde/3D-følelse (som sollys som treffer en skråning) i stedet for flate
+// fargeflater.
+function buildDetailGradients(svg) {
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+
+  GRADE_BUCKETS.forEach((bucket, i) => {
+    const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+    gradient.setAttribute('id', `loype-grade-gradient-${i}`);
+    gradient.setAttribute('x1', '0');
+    gradient.setAttribute('y1', '0');
+    gradient.setAttribute('x2', '0');
+    gradient.setAttribute('y2', '1');
+
+    const stopTop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+    stopTop.setAttribute('offset', '0%');
+    stopTop.setAttribute('stop-color', bucket.light);
+    const stopBottom = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+    stopBottom.setAttribute('offset', '100%');
+    stopBottom.setAttribute('stop-color', bucket.base);
+
+    gradient.appendChild(stopTop);
+    gradient.appendChild(stopBottom);
+    defs.appendChild(gradient);
+  });
+
+  const shadowFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+  shadowFilter.setAttribute('id', 'loype-profile-shadow');
+  shadowFilter.setAttribute('x', '-20%');
+  shadowFilter.setAttribute('y', '-20%');
+  shadowFilter.setAttribute('width', '140%');
+  shadowFilter.setAttribute('height', '140%');
+  const dropShadow = document.createElementNS('http://www.w3.org/2000/svg', 'feDropShadow');
+  dropShadow.setAttribute('dx', '0');
+  dropShadow.setAttribute('dy', '2');
+  dropShadow.setAttribute('stdDeviation', '2');
+  dropShadow.setAttribute('flood-color', '#000');
+  dropShadow.setAttribute('flood-opacity', '0.3');
+  shadowFilter.appendChild(dropShadow);
+  defs.appendChild(shadowFilter);
+
+  svg.appendChild(defs);
 }
 
 let detailModal = null;
@@ -125,7 +173,10 @@ function renderDetailChart(profile) {
   const xFor = distKm => plotLeft + (totalKm > 0 ? (distKm / totalKm) : 0) * (plotRight - plotLeft);
   const yFor = elevation => plotTop + (1 - (elevation - min) / range) * (plotBottom - plotTop);
 
-  // Fylt, graderfarget profil (én polygon per delstrekning)
+  buildDetailGradients(svg);
+
+  // Fylt, gradientskyggelagt profil (én polygon per delstrekning) — lysere
+  // øverst, mørkere mot grunnlinja, for litt 3D-følelse.
   for (let i = 1; i < profile.length; i++) {
     const a = profile[i - 1], b = profile[i];
     const segKm = b.distKm - a.distKm;
@@ -136,17 +187,18 @@ function renderDetailChart(profile) {
 
     const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
     poly.setAttribute('points', `${x1},${plotBottom} ${x1},${y1} ${x2},${y2} ${x2},${plotBottom}`);
-    poly.setAttribute('fill', gradeColor(grade));
-    poly.setAttribute('fill-opacity', '0.85');
+    poly.setAttribute('fill', `url(#loype-grade-gradient-${gradeBucketIndex(grade)})`);
     svg.appendChild(poly);
   }
 
-  // Konturlinje over den fargede profilen
+  // Konturlinje over den fargede profilen, med en myk skygge for å gi
+  // fjellsilhuetten litt dybde.
   const outline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
   outline.setAttribute('points', profile.map(p => `${xFor(p.distKm).toFixed(1)},${yFor(p.elevation).toFixed(1)}`).join(' '));
   outline.setAttribute('fill', 'none');
   outline.setAttribute('stroke', '#1a1a2e');
   outline.setAttribute('stroke-width', '1.5');
+  outline.setAttribute('filter', 'url(#loype-profile-shadow)');
   svg.appendChild(outline);
 
   // Y-akse med noen få høydenivåer
