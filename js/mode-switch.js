@@ -19,6 +19,9 @@ function setMode(mode) {
   }
   setReiseveiMapVisible(mode === 'reisevei');
   setLoypeMapVisible(mode === 'loype');
+  if (mode === 'loype') {
+    useMyLocationForRoute();
+  }
 }
 
 function initModeSwitch() {
