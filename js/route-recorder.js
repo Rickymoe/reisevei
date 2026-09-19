@@ -116,7 +116,18 @@ function hideLoypeError() {
   document.getElementById('loype-error-msg').classList.add('hidden');
 }
 
-async function fetchRouteElevation(points) {
+const KARTVERKET_HOYDEDATA_URL = 'https://ws.geonorge.no/hoydedata/v1/punkt';
+
+async function fetchKartverketElevation(points) {
+  const coords = JSON.stringify(points.map(p => [p.lng, p.lat]));
+  const url = `${KARTVERKET_HOYDEDATA_URL}?punkter=${encodeURIComponent(coords)}&koordsys=4326`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const data = await resp.json();
+  return data.punkter.map(p => p.z);
+}
+
+async function fetchOpenElevation(points) {
   const resp = await fetch('https://api.open-elevation.com/api/v1/lookup', {
     method: 'POST',
     headers: {
@@ -135,6 +146,32 @@ async function fetchRouteElevation(points) {
   }
   const data = await resp.json();
   return data.results.map(r => r.elevation);
+}
+
+// Kartverket gir Norges egen høyoppløselige høydemodell (gratis, ingen nøkkel),
+// men returnerer z: null utenfor Norge. Open-Elevation brukes kun som
+// reserveløsning for punkter Kartverket ikke dekker.
+async function fetchRouteElevation(points) {
+  let kartverketElevations;
+  try {
+    kartverketElevations = await fetchKartverketElevation(points);
+  } catch (err) {
+    kartverketElevations = points.map(() => null);
+  }
+
+  const missingIndexes = kartverketElevations
+    .map((e, i) => (e === null || e === undefined ? i : -1))
+    .filter(i => i !== -1);
+
+  if (missingIndexes.length === 0) {
+    return kartverketElevations;
+  }
+
+  const fallbackPoints = missingIndexes.map(i => points[i]);
+  const fallbackElevations = await fetchOpenElevation(fallbackPoints);
+  const merged = [...kartverketElevations];
+  missingIndexes.forEach((i, j) => { merged[i] = fallbackElevations[j]; });
+  return merged;
 }
 
 function renderElevationChart(elevations, km) {
