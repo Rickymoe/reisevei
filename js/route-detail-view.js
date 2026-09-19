@@ -232,22 +232,43 @@ function addDetailLabel(profile, point, name) {
 
   const x = plotLeft + (totalKm > 0 ? (point.distKm / totalKm) : 0) * (plotRight - plotLeft);
   const y = plotTop + (1 - (point.elevation - min) / range) * (plotBottom - plotTop);
+  const xClamped = Math.min(Math.max(x, plotLeft + 5), plotRight - 5);
+
+  // Stiplet loddrett linje fra grunnlinja opp til punktet, som i Tour de
+  // France-profiler.
+  const connector = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  connector.setAttribute('x1', String(xClamped));
+  connector.setAttribute('y1', String(plotBottom));
+  connector.setAttribute('x2', String(xClamped));
+  connector.setAttribute('y2', String(y));
+  connector.setAttribute('stroke', '#666');
+  connector.setAttribute('stroke-width', '1');
+  connector.setAttribute('stroke-dasharray', '3,3');
+  svg.appendChild(connector);
 
   const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  dot.setAttribute('cx', String(x));
+  dot.setAttribute('cx', String(xClamped));
   dot.setAttribute('cy', String(y));
   dot.setAttribute('r', '4');
   dot.setAttribute('fill', '#1a1a2e');
   svg.appendChild(dot);
 
+  // Vertikal tekst som vokser oppover fra grunnlinja, like til venstre for
+  // den stiplede linja — samme plassering som stedsnavnene i TdF-profiler.
+  const labelX = xClamped - 8;
+  const labelY = plotBottom - 4;
   const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-  label.setAttribute('x', String(Math.min(Math.max(x, 100), 900 - 100)));
-  label.setAttribute('y', String(Math.max(y - 10, 14)));
-  label.setAttribute('text-anchor', 'middle');
+  label.setAttribute('x', String(labelX));
+  label.setAttribute('y', String(labelY));
+  label.setAttribute('text-anchor', 'start');
   label.setAttribute('font-size', '12');
   label.setAttribute('font-weight', '600');
   label.setAttribute('fill', '#1a1a2e');
-  label.textContent = `${name} (${Math.round(point.elevation)} m)`;
+  label.setAttribute('stroke', '#fff');
+  label.setAttribute('stroke-width', '3');
+  label.setAttribute('paint-order', 'stroke');
+  label.setAttribute('transform', `rotate(-90 ${labelX} ${labelY})`);
+  label.textContent = `${name} · ${point.distKm.toFixed(1)} km · ${Math.round(point.elevation)} m`;
   svg.appendChild(label);
 }
 
