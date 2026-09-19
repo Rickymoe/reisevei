@@ -250,6 +250,49 @@ function updateDistanceAndChart() {
     known = known.concat(known.slice(0, -1).reverse());
   }
   renderElevationChart(known, km);
+  updateEstimatedTime(km, known);
+}
+
+function parsePaceToSecondsPerKm(input) {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  const match = trimmed.match(/^(\d+):([0-5]?\d)$/);
+  if (match) {
+    return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+  }
+  const asNumber = parseFloat(trimmed.replace(',', '.'));
+  if (!isNaN(asNumber) && asNumber > 0) {
+    return asNumber * 60;
+  }
+  return null;
+}
+
+function formatDuration(totalSeconds) {
+  const totalMinutes = Math.round(totalSeconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}t ${minutes}min` : `${minutes} min`;
+}
+
+function updateEstimatedTime(km, elevations) {
+  const timeEl = document.getElementById('loype-time-value');
+  const paceSecPerKm = parsePaceToSecondsPerKm(document.getElementById('loype-pace-input').value);
+  if (!paceSecPerKm) {
+    timeEl.classList.add('hidden');
+    return;
+  }
+
+  let gain = 0;
+  for (let i = 1; i < elevations.length; i++) {
+    const diff = elevations[i] - elevations[i - 1];
+    if (diff > 0) gain += diff;
+  }
+  // Grov tommelfingerregel: 1 høydemeter oppover ≈ 10 ekstra flate meter.
+  const effectiveKm = km + gain / 100;
+  const seconds = effectiveKm * paceSecPerKm;
+
+  timeEl.textContent = `Estimert tid: ${formatDuration(seconds)} (høydejustert)`;
+  timeEl.classList.remove('hidden');
 }
 
 async function fetchAndStoreElevation(pt, index) {
@@ -272,6 +315,7 @@ function initLoypePanel() {
   document.getElementById('loype-undo-btn').addEventListener('click', undoLastRoutePoint);
   document.getElementById('loype-clear-btn').addEventListener('click', clearRoute);
   document.getElementById('loype-mirror-checkbox').addEventListener('change', updateDistanceAndChart);
+  document.getElementById('loype-pace-input').addEventListener('input', updateDistanceAndChart);
   updateLoypeControls();
 }
 

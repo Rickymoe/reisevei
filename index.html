@@ -59,6 +59,10 @@
         <input type="checkbox" id="loype-mirror-checkbox" />
         Speil retur (frem og tilbake)
       </label>
+      <div class="field-group">
+        <label for="loype-pace-input">Snittid flatterreng (min/km)</label>
+        <input type="text" id="loype-pace-input" placeholder="5:30" inputmode="numeric" />
+      </div>
       <div class="loype-controls">
         <button id="loype-undo-btn" class="loype-btn" disabled>Angre siste punkt</button>
         <button id="loype-clear-btn" class="loype-btn" disabled>Tøm rute</button>
@@ -66,6 +70,7 @@
       <div id="loype-error-msg" class="hidden"></div>
       <div id="loype-result" class="hidden">
         <div id="loype-distance-value"></div>
+        <div id="loype-time-value" class="hidden"></div>
         <svg id="loype-elevation-chart" viewBox="0 0 240 90" preserveAspectRatio="none" role="img"></svg>
       </div>
     </div>
