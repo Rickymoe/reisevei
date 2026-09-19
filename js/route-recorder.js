@@ -1,4 +1,4 @@
-const LOYPE_LINE_COLOR = '#2e7d32';
+const LOYPE_LINE_COLOR = '#ff9800';
 
 let routePoints = [];
 let routePolyline = null;
