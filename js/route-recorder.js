@@ -12,7 +12,7 @@ function onLoypeRouteClick(e) {
   redrawRouteMarkers();
   updateLoypeControls();
   updateDistanceAndChart();
-  fetchAndStoreElevation(pt, routePoints.length - 1, routeVersion);
+  fetchAndStoreElevation(pt, routePoints.length - 1);
 }
 
 function redrawRoutePolyline() {
@@ -46,7 +46,6 @@ function redrawRouteMarkers() {
 function undoLastRoutePoint() {
   routePoints.pop();
   routeElevations.pop();
-  routeVersion++;
   redrawRoutePolyline();
   redrawRouteMarkers();
   updateLoypeControls();
@@ -56,7 +55,6 @@ function undoLastRoutePoint() {
 function clearRoute() {
   routePoints = [];
   routeElevations = [];
-  routeVersion++;
   redrawRoutePolyline();
   redrawRouteMarkers();
   updateLoypeControls();
@@ -134,7 +132,6 @@ function renderElevationChart(elevations) {
 }
 
 let routeElevations = [];
-let routeVersion = 0;
 
 function updateDistanceAndChart() {
   if (routePoints.length < 2) {
@@ -158,14 +155,15 @@ function updateDistanceAndChart() {
   renderElevationChart(known);
 }
 
-async function fetchAndStoreElevation(pt, index, version) {
+async function fetchAndStoreElevation(pt, index) {
   try {
     const [elevation] = await fetchRouteElevation([pt]);
-    if (version !== routeVersion || index >= routePoints.length) return;
+    if (routePoints[index] !== pt) return;
     routeElevations[index] = elevation;
+    hideLoypeError();
     updateDistanceAndChart();
   } catch (err) {
-    if (version !== routeVersion) return;
+    if (routePoints[index] !== pt) return;
     showLoypeError(err.message === 'rate_limit'
       ? 'Høyde-API er overbelastet. Prøv igjen om litt.'
       : `Kunne ikke hente høydedata (${err.message}). Prøv igjen.`);
