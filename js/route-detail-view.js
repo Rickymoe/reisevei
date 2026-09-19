@@ -47,7 +47,7 @@ function buildDistanceProfile() {
 
 // Vinkel på terreng/vei-gruppen (skewX-grader). Negativ vinkel skrår toppen
 // av profilen mot venstre relativt til grunnlinja.
-const CHART_SKEW_DEG = -18;
+const CHART_SKEW_DEG = -30;
 const CHART_SKEW_RAD = (CHART_SKEW_DEG * Math.PI) / 180;
 
 // Vinkler rundt grunnlinja (plotBottom), ikke rundt origo — bakken skal
@@ -139,7 +139,7 @@ function buildDetailModalSkeleton() {
     <div id="loype-detail-panel">
       <button id="loype-detail-close" aria-label="Lukk">&times;</button>
       <div id="loype-detail-summary"></div>
-      <svg id="loype-detail-chart" viewBox="-100 0 1100 320" preserveAspectRatio="xMidYMid meet" role="img"></svg>
+      <svg id="loype-detail-chart" viewBox="-200 0 1300 320" preserveAspectRatio="xMidYMid meet" role="img"></svg>
     </div>
   `;
   document.body.appendChild(detailModal);
