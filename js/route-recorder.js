@@ -6,11 +6,13 @@ let routeMarkers = [];
 
 function onLoypeRouteClick(e) {
   if (getMode() !== 'loype') return;
-  routePoints.push({ lat: e.latLng.lat(), lng: e.latLng.lng() });
+  const pt = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+  routePoints.push(pt);
   redrawRoutePolyline();
   redrawRouteMarkers();
   updateLoypeControls();
-  recalcRoute();
+  updateDistanceAndChart();
+  fetchAndStoreElevation(pt, routePoints.length - 1, routeVersion);
 }
 
 function redrawRoutePolyline() {
@@ -43,18 +45,22 @@ function redrawRouteMarkers() {
 
 function undoLastRoutePoint() {
   routePoints.pop();
+  routeElevations.pop();
+  routeVersion++;
   redrawRoutePolyline();
   redrawRouteMarkers();
   updateLoypeControls();
-  recalcRoute();
+  updateDistanceAndChart();
 }
 
 function clearRoute() {
   routePoints = [];
+  routeElevations = [];
+  routeVersion++;
   redrawRoutePolyline();
   redrawRouteMarkers();
   updateLoypeControls();
-  recalcRoute();
+  updateDistanceAndChart();
 }
 
 function setLoypeMapVisible(visible) {
@@ -127,16 +133,15 @@ function renderElevationChart(elevations) {
   svg.appendChild(polyline);
 }
 
-let loypeCalcGeneration = 0;
+let routeElevations = [];
+let routeVersion = 0;
 
-async function recalcRoute() {
-  const generation = ++loypeCalcGeneration;
+function updateDistanceAndChart() {
   if (routePoints.length < 2) {
     hideLoypeError();
     document.getElementById('loype-result').classList.add('hidden');
     return;
   }
-  hideLoypeError();
   const mirror = document.getElementById('loype-mirror-checkbox').checked;
 
   const line = turf.lineString(routePoints.map(p => [p.lng, p.lat]));
@@ -144,32 +149,33 @@ async function recalcRoute() {
   if (mirror) km *= 2;
 
   document.getElementById('loype-distance-value').textContent = `${km.toFixed(2)} km`;
-  renderElevationChart([]);
   document.getElementById('loype-result').classList.remove('hidden');
 
-  let elevations;
+  let known = routeElevations.filter(e => e !== undefined);
+  if (mirror && known.length > 0) {
+    known = known.concat(known.slice(0, -1).reverse());
+  }
+  renderElevationChart(known);
+}
+
+async function fetchAndStoreElevation(pt, index, version) {
   try {
-    elevations = await fetchRouteElevation(routePoints);
+    const [elevation] = await fetchRouteElevation([pt]);
+    if (version !== routeVersion || index >= routePoints.length) return;
+    routeElevations[index] = elevation;
+    updateDistanceAndChart();
   } catch (err) {
-    if (generation !== loypeCalcGeneration) return;
+    if (version !== routeVersion) return;
     showLoypeError(err.message === 'rate_limit'
       ? 'Høyde-API er overbelastet. Prøv igjen om litt.'
       : `Kunne ikke hente høydedata (${err.message}). Prøv igjen.`);
-    return;
   }
-  if (generation !== loypeCalcGeneration) return;
-
-  if (mirror) {
-    elevations = elevations.concat(elevations.slice(0, -1).reverse());
-  }
-
-  renderElevationChart(elevations);
 }
 
 function initLoypePanel() {
   document.getElementById('loype-undo-btn').addEventListener('click', undoLastRoutePoint);
   document.getElementById('loype-clear-btn').addEventListener('click', clearRoute);
-  document.getElementById('loype-mirror-checkbox').addEventListener('change', recalcRoute);
+  document.getElementById('loype-mirror-checkbox').addEventListener('change', updateDistanceAndChart);
   updateLoypeControls();
 }
 
