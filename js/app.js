@@ -23,6 +23,7 @@ function initMap() {
     zoom: 12,
     mapTypeId: 'roadmap',
     disableDefaultUI: false,
+    clickableIcons: false,
     mapId: 'DEMO_MAP_ID',
   });
   geocoder = new google.maps.Geocoder();
