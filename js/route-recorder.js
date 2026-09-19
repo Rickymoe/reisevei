@@ -287,7 +287,7 @@ function updateDistanceAndChart() {
     known = known.concat(known.slice(0, -1).reverse());
   }
   renderElevationChart(known, km);
-  updateEstimatedTime(km, known);
+  updateEstimatedTime();
 }
 
 function parsePaceToSecondsPerKm(input) {
@@ -311,22 +311,52 @@ function formatDuration(totalSeconds) {
   return hours > 0 ? `${hours}t ${minutes}min` : `${minutes} min`;
 }
 
-function updateEstimatedTime(km, elevations) {
+// Grad-avhengig tidsstraff per delstrekning. Ved ~10% stigning gir dette en
+// faktor på ca. 2x (stemmer grovt med Naismith's rule for turgåing), og
+// eskalerer brattere for virkelig steile partier (>20%) i tråd med at
+// energikostnaden ved klatring vokser mer enn proporsjonalt med helningen.
+// Nedoverbakke gir ingen bonus (holdes enkelt/konservativt).
+function segmentTimeSeconds(paceSecPerKm, reverseGrade) {
+  let seconds = 0;
+  for (let i = 1; i < routePoints.length; i++) {
+    const a = routePoints[i - 1];
+    const b = routePoints[i];
+    const segKm = turf.distance(
+      turf.point([a.lng, a.lat]),
+      turf.point([b.lng, b.lat]),
+      { units: 'kilometers' }
+    );
+    if (segKm === 0) continue;
+
+    let climbGrade = 0;
+    const ea = routeElevations[i - 1];
+    const eb = routeElevations[i];
+    if (ea !== undefined && eb !== undefined) {
+      let dz = eb - ea;
+      if (reverseGrade) dz = -dz;
+      climbGrade = Math.max(0, dz / (segKm * 1000));
+    }
+    const factor = 1 + 10 * climbGrade + 20 * climbGrade * climbGrade;
+    seconds += segKm * paceSecPerKm * factor;
+  }
+  return seconds;
+}
+
+function updateEstimatedTime() {
   const timeEl = document.getElementById('loype-time-value');
   const paceSecPerKm = parsePaceToSecondsPerKm(document.getElementById('loype-pace-input').value);
-  if (!paceSecPerKm) {
+  if (!paceSecPerKm || routePoints.length < 2) {
     timeEl.classList.add('hidden');
     return;
   }
+  const mirror = document.getElementById('loype-mirror-checkbox').checked;
 
-  let gain = 0;
-  for (let i = 1; i < elevations.length; i++) {
-    const diff = elevations[i] - elevations[i - 1];
-    if (diff > 0) gain += diff;
+  let seconds = segmentTimeSeconds(paceSecPerKm, false);
+  if (mirror) {
+    // Returveien følger samme delstrekninger baklengs — det som var
+    // nedoverbakke på vei ut er oppoverbakke på vei tilbake.
+    seconds += segmentTimeSeconds(paceSecPerKm, true);
   }
-  // Grov tommelfingerregel: 1 høydemeter oppover ≈ 10 ekstra flate meter.
-  const effectiveKm = km + gain / 100;
-  const seconds = effectiveKm * paceSecPerKm;
 
   timeEl.textContent = `Estimert tid: ${formatDuration(seconds)} (høydejustert)`;
   timeEl.classList.remove('hidden');
