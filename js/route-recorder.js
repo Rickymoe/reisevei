@@ -152,18 +152,36 @@ function renderElevationChart(elevations) {
   svg.appendChild(title);
 
   const stepX = elevations.length > 1 ? (width - pad * 2) / (elevations.length - 1) : 0;
-  const pointsAttr = elevations.map((e, i) => {
-    const x = pad + i * stepX;
-    const y = pad + (1 - (e - min) / range) * (height - pad * 2);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
+  const coords = elevations.map((e, i) => ({
+    x: pad + i * stepX,
+    y: pad + (1 - (e - min) / range) * (height - pad * 2),
+    e,
+  }));
 
   const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-  polyline.setAttribute('points', pointsAttr);
+  polyline.setAttribute('points', coords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' '));
   polyline.setAttribute('fill', 'none');
   polyline.setAttribute('stroke', LOYPE_LINE_COLOR);
   polyline.setAttribute('stroke-width', '2');
   svg.appendChild(polyline);
+
+  function addElevationLabel(point, dy) {
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', String(Math.min(Math.max(point.x, 14), width - 14)));
+    label.setAttribute('y', String(Math.min(Math.max(point.y + dy, 10), height - 4)));
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('font-size', '9');
+    label.setAttribute('fill', '#1a1a2e');
+    label.textContent = `${Math.round(point.e)} m`;
+    svg.appendChild(label);
+  }
+
+  const maxPoint = coords.reduce((a, b) => (b.e > a.e ? b : a));
+  const minPoint = coords.reduce((a, b) => (b.e < a.e ? b : a));
+  addElevationLabel(maxPoint, -6);
+  if (minPoint.e !== maxPoint.e) {
+    addElevationLabel(minPoint, 12);
+  }
 }
 
 let routeElevations = [];
