@@ -137,12 +137,12 @@ async function fetchRouteElevation(points) {
   return data.results.map(r => r.elevation);
 }
 
-function renderElevationChart(elevations) {
+function renderElevationChart(elevations, km) {
   const svg = document.getElementById('loype-elevation-chart');
   while (svg.firstChild) svg.removeChild(svg.firstChild);
   if (elevations.length === 0) return;
 
-  const width = 240, height = 90, pad = 4, axisLeft = 30;
+  const width = 240, height = 90, pad = 4, axisLeft = 30, axisBottom = 12;
   const min = Math.min(...elevations);
   const max = Math.max(...elevations);
   const range = Math.max(max - min, 1);
@@ -154,16 +154,39 @@ function renderElevationChart(elevations) {
   const plotLeft = axisLeft;
   const plotRight = width - pad;
   const plotTop = pad;
-  const plotBottom = height - pad;
+  const plotBottom = height - axisBottom;
 
-  const axisLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  axisLine.setAttribute('x1', String(plotLeft));
-  axisLine.setAttribute('y1', String(plotTop));
-  axisLine.setAttribute('x2', String(plotLeft));
-  axisLine.setAttribute('y2', String(plotBottom));
-  axisLine.setAttribute('stroke', '#ccc');
-  axisLine.setAttribute('stroke-width', '1');
-  svg.appendChild(axisLine);
+  const yAxisLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  yAxisLine.setAttribute('x1', String(plotLeft));
+  yAxisLine.setAttribute('y1', String(plotTop));
+  yAxisLine.setAttribute('x2', String(plotLeft));
+  yAxisLine.setAttribute('y2', String(plotBottom));
+  yAxisLine.setAttribute('stroke', '#ccc');
+  yAxisLine.setAttribute('stroke-width', '1');
+  svg.appendChild(yAxisLine);
+
+  const xAxisLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  xAxisLine.setAttribute('x1', String(plotLeft));
+  xAxisLine.setAttribute('y1', String(plotBottom));
+  xAxisLine.setAttribute('x2', String(plotRight));
+  xAxisLine.setAttribute('y2', String(plotBottom));
+  xAxisLine.setAttribute('stroke', '#ccc');
+  xAxisLine.setAttribute('stroke-width', '1');
+  svg.appendChild(xAxisLine);
+
+  function addXLabel(x, text, anchor) {
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', String(x));
+    label.setAttribute('y', String(height - 2));
+    label.setAttribute('text-anchor', anchor);
+    label.setAttribute('font-size', '9');
+    label.setAttribute('fill', '#5f6368');
+    label.textContent = text;
+    svg.appendChild(label);
+  }
+
+  addXLabel(plotLeft, '0 km', 'start');
+  addXLabel(plotRight, `${km.toFixed(2)} km`, 'end');
 
   function addTick(y, value) {
     const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -226,7 +249,7 @@ function updateDistanceAndChart() {
   if (mirror && known.length > 0) {
     known = known.concat(known.slice(0, -1).reverse());
   }
-  renderElevationChart(known);
+  renderElevationChart(known, km);
 }
 
 async function fetchAndStoreElevation(pt, index) {
