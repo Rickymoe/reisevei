@@ -6,13 +6,34 @@ let routeMarkers = [];
 
 function onLoypeRouteClick(e) {
   if (getMode() !== 'loype') return;
-  const pt = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+  addRoutePoint(e.latLng.lat(), e.latLng.lng());
+}
+
+function addRoutePoint(lat, lng) {
+  const pt = { lat, lng };
   routePoints.push(pt);
   redrawRoutePolyline();
   redrawRouteMarkers();
   updateLoypeControls();
   updateDistanceAndChart();
   fetchAndStoreElevation(pt, routePoints.length - 1);
+}
+
+function useMyLocationForRoute() {
+  if (!navigator.geolocation) {
+    showLoypeError('Enheten din støtter ikke geolokasjon.');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      addRoutePoint(pos.coords.latitude, pos.coords.longitude);
+      map.panTo({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      map.setZoom(16);
+    },
+    () => {
+      showLoypeError('Fikk ikke tilgang til posisjonen din.');
+    }
+  );
 }
 
 function redrawRoutePolyline() {
@@ -171,6 +192,7 @@ async function fetchAndStoreElevation(pt, index) {
 }
 
 function initLoypePanel() {
+  document.getElementById('loype-geolocate-btn').addEventListener('click', useMyLocationForRoute);
   document.getElementById('loype-undo-btn').addEventListener('click', undoLastRoutePoint);
   document.getElementById('loype-clear-btn').addEventListener('click', clearRoute);
   document.getElementById('loype-mirror-checkbox').addEventListener('change', updateDistanceAndChart);
