@@ -50,8 +50,10 @@ function buildDistanceProfile() {
 const CHART_SKEW_DEG = -18;
 const CHART_SKEW_RAD = (CHART_SKEW_DEG * Math.PI) / 180;
 
-function skewedX(x, y) {
-  return x + y * Math.tan(CHART_SKEW_RAD);
+// Vinkler rundt grunnlinja (plotBottom), ikke rundt origo — bakken skal
+// stå stille, kun terrenget over skal lene seg innover.
+function skewedX(x, y, plotBottom) {
+  return x + (y - plotBottom) * Math.tan(CHART_SKEW_RAD);
 }
 
 const GRADE_BUCKETS = [
@@ -137,7 +139,7 @@ function buildDetailModalSkeleton() {
     <div id="loype-detail-panel">
       <button id="loype-detail-close" aria-label="Lukk">&times;</button>
       <div id="loype-detail-summary"></div>
-      <svg id="loype-detail-chart" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet" role="img"></svg>
+      <svg id="loype-detail-chart" viewBox="-100 0 1100 320" preserveAspectRatio="xMidYMid meet" role="img"></svg>
     </div>
   `;
   document.body.appendChild(detailModal);
@@ -188,7 +190,7 @@ function renderDetailChart(profile) {
   // dybdefølelse, som i Tour de France-profiler — mens akser/tall under
   // holdes rette og lesbare.
   const terrainGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-  terrainGroup.setAttribute('transform', `skewX(${CHART_SKEW_DEG})`);
+  terrainGroup.setAttribute('transform', `translate(0, ${plotBottom}) skewX(${CHART_SKEW_DEG}) translate(0, ${-plotBottom})`);
   svg.appendChild(terrainGroup);
 
   // Fylt, gradientskyggelagt profil (én polygon per delstrekning) — lysere
@@ -317,8 +319,8 @@ function addDetailLabel(profile, point, name) {
 
   // Terrenget er vinklet (skewX), så punktet på selve profilen flytter seg
   // vannrett avhengig av høyde — regn ut hvor det faktisk havner visuelt.
-  const skewTopX = skewedX(xClamped, y);
-  const skewBottomX = skewedX(xClamped, plotBottom);
+  const skewTopX = skewedX(xClamped, y, plotBottom);
+  const skewBottomX = skewedX(xClamped, plotBottom, plotBottom);
 
   // Stiplet linje fra grunnlinja opp til punktet, langs samme vinkel som
   // terrenget, som i Tour de France-profiler.
