@@ -45,6 +45,15 @@ function buildDistanceProfile() {
   return profile;
 }
 
+// Vinkel på terreng/vei-gruppen (skewX-grader). Negativ vinkel skrår toppen
+// av profilen mot venstre relativt til grunnlinja.
+const CHART_SKEW_DEG = -18;
+const CHART_SKEW_RAD = (CHART_SKEW_DEG * Math.PI) / 180;
+
+function skewedX(x, y) {
+  return x + y * Math.tan(CHART_SKEW_RAD);
+}
+
 const GRADE_BUCKETS = [
   { max: 0.03, base: '#8bc34a', light: '#dcedc8' },
   { max: 0.06, base: '#ffc107', light: '#fff3cd' },
@@ -175,6 +184,13 @@ function renderDetailChart(profile) {
 
   buildDetailGradients(svg);
 
+  // Terrenget og veien vinkles (skewX) som én gruppe for å gi ekte
+  // dybdefølelse, som i Tour de France-profiler — mens akser/tall under
+  // holdes rette og lesbare.
+  const terrainGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  terrainGroup.setAttribute('transform', `skewX(${CHART_SKEW_DEG})`);
+  svg.appendChild(terrainGroup);
+
   // Fylt, gradientskyggelagt profil (én polygon per delstrekning) — lysere
   // øverst, mørkere mot grunnlinja, for litt 3D-følelse.
   for (let i = 1; i < profile.length; i++) {
@@ -188,7 +204,7 @@ function renderDetailChart(profile) {
     const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
     poly.setAttribute('points', `${x1},${plotBottom} ${x1},${y1} ${x2},${y2} ${x2},${plotBottom}`);
     poly.setAttribute('fill', `url(#loype-grade-gradient-${gradeBucketIndex(grade)})`);
-    svg.appendChild(poly);
+    terrainGroup.appendChild(poly);
   }
 
   // "Veien" du løper på, tegnet oppå profilen: en grå asfalt-stripe med en
@@ -203,7 +219,7 @@ function renderDetailChart(profile) {
   roadBase.setAttribute('stroke-linejoin', 'round');
   roadBase.setAttribute('stroke-linecap', 'round');
   roadBase.setAttribute('filter', 'url(#loype-profile-shadow)');
-  svg.appendChild(roadBase);
+  terrainGroup.appendChild(roadBase);
 
   const roadCenterline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
   roadCenterline.setAttribute('points', pointsAttr);
@@ -212,7 +228,7 @@ function renderDetailChart(profile) {
   roadCenterline.setAttribute('stroke-width', '1.5');
   roadCenterline.setAttribute('stroke-dasharray', '6,6');
   roadCenterline.setAttribute('stroke-linecap', 'round');
-  svg.appendChild(roadCenterline);
+  terrainGroup.appendChild(roadCenterline);
 
   // Y-akse med noen få høydenivåer
   const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -299,12 +315,17 @@ function addDetailLabel(profile, point, name) {
   const y = plotTop + (1 - (point.elevation - min) / range) * (plotBottom - plotTop);
   const xClamped = Math.min(Math.max(x, plotLeft + 5), plotRight - 5);
 
-  // Stiplet loddrett linje fra grunnlinja opp til punktet, som i Tour de
-  // France-profiler.
+  // Terrenget er vinklet (skewX), så punktet på selve profilen flytter seg
+  // vannrett avhengig av høyde — regn ut hvor det faktisk havner visuelt.
+  const skewTopX = skewedX(xClamped, y);
+  const skewBottomX = skewedX(xClamped, plotBottom);
+
+  // Stiplet linje fra grunnlinja opp til punktet, langs samme vinkel som
+  // terrenget, som i Tour de France-profiler.
   const connector = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  connector.setAttribute('x1', String(xClamped));
+  connector.setAttribute('x1', String(skewBottomX));
   connector.setAttribute('y1', String(plotBottom));
-  connector.setAttribute('x2', String(xClamped));
+  connector.setAttribute('x2', String(skewTopX));
   connector.setAttribute('y2', String(y));
   connector.setAttribute('stroke', '#666');
   connector.setAttribute('stroke-width', '1');
@@ -312,7 +333,7 @@ function addDetailLabel(profile, point, name) {
   svg.appendChild(connector);
 
   const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  dot.setAttribute('cx', String(xClamped));
+  dot.setAttribute('cx', String(skewTopX));
   dot.setAttribute('cy', String(y));
   dot.setAttribute('r', '4');
   dot.setAttribute('fill', '#1a1a2e');
@@ -320,7 +341,7 @@ function addDetailLabel(profile, point, name) {
 
   // Vertikal tekst som vokser oppover fra grunnlinja, like til venstre for
   // den stiplede linja — samme plassering som stedsnavnene i TdF-profiler.
-  const labelX = xClamped - 8;
+  const labelX = skewBottomX - 8;
   const labelY = plotBottom - 4;
   const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   label.setAttribute('x', String(labelX));
