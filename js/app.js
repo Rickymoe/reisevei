@@ -30,6 +30,7 @@ function initMap() {
 
   map.addListener('click', onMapClick);
   map.addListener('click', onLoypeRouteClick);
+  map.addListener('rightclick', onLoypeRouteRightClick);
   setupPanel();
   setDefaultDepartureTime();
   initTransitToggle();

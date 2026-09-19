@@ -19,6 +19,31 @@ function addRoutePoint(lat, lng) {
   fetchAndStoreElevation(pt, routePoints.length - 1);
 }
 
+function onLoypeRouteRightClick(e) {
+  if (getMode() !== 'loype') return;
+  e.domEvent?.preventDefault();
+
+  const lat = e.latLng.lat();
+  const lng = e.latLng.lng();
+  let insertIndex;
+  if (routePoints.length < 2) {
+    insertIndex = 0;
+  } else {
+    const line = turf.lineString(routePoints.map(p => [p.lng, p.lat]));
+    const snapped = turf.nearestPointOnLine(line, turf.point([lng, lat]));
+    insertIndex = snapped.properties.index + 1;
+  }
+
+  const pt = { lat, lng };
+  routePoints.splice(insertIndex, 0, pt);
+  routeElevations.splice(insertIndex, 0, undefined);
+  redrawRoutePolyline();
+  redrawRouteMarkers();
+  updateLoypeControls();
+  updateDistanceAndChart();
+  fetchAndStoreElevation(pt, insertIndex);
+}
+
 let myLocationMarker = null;
 
 function useMyLocationForRoute() {
