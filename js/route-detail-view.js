@@ -191,15 +191,28 @@ function renderDetailChart(profile) {
     svg.appendChild(poly);
   }
 
-  // Konturlinje over den fargede profilen, med en myk skygge for å gi
-  // fjellsilhuetten litt dybde.
-  const outline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-  outline.setAttribute('points', profile.map(p => `${xFor(p.distKm).toFixed(1)},${yFor(p.elevation).toFixed(1)}`).join(' '));
-  outline.setAttribute('fill', 'none');
-  outline.setAttribute('stroke', '#1a1a2e');
-  outline.setAttribute('stroke-width', '1.5');
-  outline.setAttribute('filter', 'url(#loype-profile-shadow)');
-  svg.appendChild(outline);
+  // "Veien" du løper på, tegnet oppå profilen: en grå asfalt-stripe med en
+  // hvit stiplet midtlinje, som gir en følelse av å se selve underlaget.
+  const pointsAttr = profile.map(p => `${xFor(p.distKm).toFixed(1)},${yFor(p.elevation).toFixed(1)}`).join(' ');
+
+  const roadBase = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  roadBase.setAttribute('points', pointsAttr);
+  roadBase.setAttribute('fill', 'none');
+  roadBase.setAttribute('stroke', '#4a4a4a');
+  roadBase.setAttribute('stroke-width', '6');
+  roadBase.setAttribute('stroke-linejoin', 'round');
+  roadBase.setAttribute('stroke-linecap', 'round');
+  roadBase.setAttribute('filter', 'url(#loype-profile-shadow)');
+  svg.appendChild(roadBase);
+
+  const roadCenterline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  roadCenterline.setAttribute('points', pointsAttr);
+  roadCenterline.setAttribute('fill', 'none');
+  roadCenterline.setAttribute('stroke', '#fff');
+  roadCenterline.setAttribute('stroke-width', '1.5');
+  roadCenterline.setAttribute('stroke-dasharray', '6,6');
+  roadCenterline.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(roadCenterline);
 
   // Y-akse med noen få høydenivåer
   const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
