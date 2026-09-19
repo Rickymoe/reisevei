@@ -521,6 +521,63 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   display: block;
   background: #f1f8f2;
   border-radius: 8px;
+  cursor: pointer;
+}
+
+#loype-detail-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#loype-detail-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+#loype-detail-panel {
+  position: relative;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  width: min(940px, 92vw);
+  max-height: 90vh;
+  overflow: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+#loype-detail-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: #888;
+  cursor: pointer;
+}
+
+#loype-detail-close:hover { color: #333; }
+
+#loype-detail-summary {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 12px;
+  padding-right: 24px;
+}
+
+#loype-detail-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #f8f9fa;
+  border-radius: 8px;
 }
 
 body[data-mode="loype"] .transit-btn,
