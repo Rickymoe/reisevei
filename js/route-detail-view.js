@@ -195,10 +195,23 @@ function renderDetailChart(profile) {
     : 0;
   poly([lastBase, lastFront, lastBackFront, lastBackBase], GRADE_BUCKETS[gradeBucketIndex(lastGrade)].dark);
 
-  // --- Vei-midtlinje: hvit stiplet linje langs midten av toppflaten ---
+  // --- Veien: grå asfalt-base langs midten av toppflaten, med hvit stiplet
+  // midtlinje oppå — den grå basen sikrer at veien er synlig uansett hvor
+  // lys terrengfargen under er.
   const midPts = frontPts.map((p, i) => ({ x: (p.x + backPts[i].x) / 2, y: (p.y + backPts[i].y) / 2 }));
+  const midPointsAttr = midPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+  const roadBase = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  roadBase.setAttribute('points', midPointsAttr);
+  roadBase.setAttribute('fill', 'none');
+  roadBase.setAttribute('stroke', '#4a4a4a');
+  roadBase.setAttribute('stroke-width', '7');
+  roadBase.setAttribute('stroke-linejoin', 'round');
+  roadBase.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(roadBase);
+
   const roadLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-  roadLine.setAttribute('points', midPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+  roadLine.setAttribute('points', midPointsAttr);
   roadLine.setAttribute('fill', 'none');
   roadLine.setAttribute('stroke', '#fff');
   roadLine.setAttribute('stroke-width', '2');
