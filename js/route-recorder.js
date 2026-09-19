@@ -417,6 +417,7 @@ function initLoypePanel() {
   document.getElementById('loype-clear-btn').addEventListener('click', clearRoute);
   document.getElementById('loype-mirror-checkbox').addEventListener('change', updateDistanceAndChart);
   document.getElementById('loype-pace-input').addEventListener('input', updateDistanceAndChart);
+  initPanelCollapse('loype-panel', 'loype-panel-collapse-btn');
   updateLoypeControls();
 }
 

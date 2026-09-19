@@ -148,6 +148,7 @@ function setupPanel() {
   document.querySelector('#info-panel .close-btn').addEventListener('click', () => {
     document.getElementById('info-panel').classList.add('hidden');
   });
+  initPanelCollapse('panel', 'panel-collapse-btn');
 }
 
 function addPoint() {

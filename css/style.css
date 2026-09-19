@@ -144,6 +144,31 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
 .info-btn:hover { background: #f0f7ff; }
 
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.panel-collapse-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  line-height: 1;
+  color: #888;
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
+.panel-collapse-btn:hover { color: #333; }
+
+#panel.collapsed > *:not(.panel-header),
+#loype-panel.collapsed > *:not(.panel-header) {
+  display: none;
+}
+
 .point-row {
   display: flex;
   align-items: center;

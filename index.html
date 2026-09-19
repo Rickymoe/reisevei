@@ -18,7 +18,10 @@
     <div id="panel">
       <div class="panel-header">
         <h2>Reisevei</h2>
-        <button id="info-btn" class="info-btn">Slik bruker du Reisevei</button>
+        <div class="panel-header-actions">
+          <button id="info-btn" class="info-btn">Slik bruker du Reisevei</button>
+          <button id="panel-collapse-btn" class="panel-collapse-btn" aria-label="Skjul/vis panel" title="Skjul/vis panel">▾</button>
+        </div>
       </div>
 
       <div id="points-container"></div>
@@ -45,6 +48,7 @@
     <div id="loype-panel" class="hidden">
       <div class="panel-header">
         <h2>Løyperute</h2>
+        <button id="loype-panel-collapse-btn" class="panel-collapse-btn" aria-label="Skjul/vis panel" title="Skjul/vis panel">▾</button>
       </div>
       <p class="loype-instructions">Klikk på kartet for å legge til punkter langs ruten din, i rekkefølge.</p>
       <div class="loype-icon-row">

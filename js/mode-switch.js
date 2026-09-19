@@ -31,4 +31,13 @@ function initModeSwitch() {
   document.getElementById('mode-loype-btn').addEventListener('click', () => setMode('loype'));
 }
 
+function initPanelCollapse(panelId, buttonId) {
+  const panel = document.getElementById(panelId);
+  const btn = document.getElementById(buttonId);
+  btn.addEventListener('click', () => {
+    const collapsed = panel.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▸' : '▾';
+  });
+}
+
 document.addEventListener('DOMContentLoaded', initModeSwitch);
