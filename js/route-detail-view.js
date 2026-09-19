@@ -45,70 +45,24 @@ function buildDistanceProfile() {
   return profile;
 }
 
-// Vinkel på terreng/vei-gruppen (skewX-grader). Negativ vinkel skrår toppen
-// av profilen mot venstre relativt til grunnlinja.
-const CHART_SKEW_DEG = -30;
-const CHART_SKEW_RAD = (CHART_SKEW_DEG * Math.PI) / 180;
+// Dybde-forskyvning for den ekstruderte 3D-følelsen: toppflaten (veien) og
+// endeflaten flyttes dette mange enheter opp/høyre relativt til frontflaten.
+const DEPTH_DX = 50;
+const DEPTH_DY = -22;
 
-// Vinkler rundt grunnlinja (plotBottom), ikke rundt origo — bakken skal
-// stå stille, kun terrenget over skal lene seg innover.
-function skewedX(x, y, plotBottom) {
-  return x + (y - plotBottom) * Math.tan(CHART_SKEW_RAD);
+function depthOffset(pt) {
+  return { x: pt.x + DEPTH_DX, y: pt.y + DEPTH_DY };
 }
 
 const GRADE_BUCKETS = [
-  { max: 0.03, base: '#8bc34a', light: '#dcedc8' },
-  { max: 0.06, base: '#ffc107', light: '#fff3cd' },
-  { max: 0.10, base: '#ff9800', light: '#ffe0b2' },
-  { max: Infinity, base: '#e53935', light: '#ffcdd2' },
+  { max: 0.03, light: '#dcedc8', base: '#8bc34a', dark: '#5a8f2e' },
+  { max: 0.06, light: '#fff3cd', base: '#ffc107', dark: '#c79400' },
+  { max: 0.10, light: '#ffe0b2', base: '#ff9800', dark: '#c66f00' },
+  { max: Infinity, light: '#ffcdd2', base: '#e53935', dark: '#a52521' },
 ];
 
 function gradeBucketIndex(grade) {
   return GRADE_BUCKETS.findIndex(b => grade < b.max);
-}
-
-// Bygger en lys-til-mørk gradient per stigningsfarge, så profilen får litt
-// dybde/3D-følelse (som sollys som treffer en skråning) i stedet for flate
-// fargeflater.
-function buildDetailGradients(svg) {
-  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-
-  GRADE_BUCKETS.forEach((bucket, i) => {
-    const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-    gradient.setAttribute('id', `loype-grade-gradient-${i}`);
-    gradient.setAttribute('x1', '0');
-    gradient.setAttribute('y1', '0');
-    gradient.setAttribute('x2', '0');
-    gradient.setAttribute('y2', '1');
-
-    const stopTop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-    stopTop.setAttribute('offset', '0%');
-    stopTop.setAttribute('stop-color', bucket.light);
-    const stopBottom = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-    stopBottom.setAttribute('offset', '100%');
-    stopBottom.setAttribute('stop-color', bucket.base);
-
-    gradient.appendChild(stopTop);
-    gradient.appendChild(stopBottom);
-    defs.appendChild(gradient);
-  });
-
-  const shadowFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
-  shadowFilter.setAttribute('id', 'loype-profile-shadow');
-  shadowFilter.setAttribute('x', '-20%');
-  shadowFilter.setAttribute('y', '-20%');
-  shadowFilter.setAttribute('width', '140%');
-  shadowFilter.setAttribute('height', '140%');
-  const dropShadow = document.createElementNS('http://www.w3.org/2000/svg', 'feDropShadow');
-  dropShadow.setAttribute('dx', '0');
-  dropShadow.setAttribute('dy', '2');
-  dropShadow.setAttribute('stdDeviation', '2');
-  dropShadow.setAttribute('flood-color', '#000');
-  dropShadow.setAttribute('flood-opacity', '0.3');
-  shadowFilter.appendChild(dropShadow);
-  defs.appendChild(shadowFilter);
-
-  svg.appendChild(defs);
 }
 
 let detailModal = null;
@@ -139,7 +93,7 @@ function buildDetailModalSkeleton() {
     <div id="loype-detail-panel">
       <button id="loype-detail-close" aria-label="Lukk">&times;</button>
       <div id="loype-detail-summary"></div>
-      <svg id="loype-detail-chart" viewBox="-200 0 1300 320" preserveAspectRatio="xMidYMid meet" role="img"></svg>
+      <svg id="loype-detail-chart" viewBox="0 0 1100 380" preserveAspectRatio="xMidYMid meet" role="img"></svg>
     </div>
   `;
   document.body.appendChild(detailModal);
@@ -172,8 +126,10 @@ function renderDetailChart(profile) {
   const svg = document.getElementById('loype-detail-chart');
   while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-  const width = 900, height = 320;
-  const plotLeft = 50, plotRight = width - 20, plotTop = 20, plotBottom = height - 40;
+  const width = 1100, height = 380;
+  const plotLeft = 30, plotRight = width - 150, plotTop = 60, plotBottom = height - 90;
+  const baseHeight = 22;
+  const rulerX = plotRight + DEPTH_DX + 25;
 
   const totalKm = profile[profile.length - 1].distKm;
   const elevations = profile.map(p => p.elevation);
@@ -184,111 +140,113 @@ function renderDetailChart(profile) {
   const xFor = distKm => plotLeft + (totalKm > 0 ? (distKm / totalKm) : 0) * (plotRight - plotLeft);
   const yFor = elevation => plotTop + (1 - (elevation - min) / range) * (plotBottom - plotTop);
 
-  buildDetailGradients(svg);
+  const poly = (points, fill) => {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    el.setAttribute('points', points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+    el.setAttribute('fill', fill);
+    svg.appendChild(el);
+    return el;
+  };
 
-  // Terrenget og veien vinkles (skewX) som én gruppe for å gi ekte
-  // dybdefølelse, som i Tour de France-profiler — mens akser/tall under
-  // holdes rette og lesbare.
-  const terrainGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-  terrainGroup.setAttribute('transform', `translate(0, ${plotBottom}) skewX(${CHART_SKEW_DEG}) translate(0, ${-plotBottom})`);
-  svg.appendChild(terrainGroup);
+  // --- Svart 3D-sokkel bakken står på ---
+  const baseFTL = { x: plotLeft, y: plotBottom };
+  const baseFTR = { x: plotRight, y: plotBottom };
+  const baseFBL = { x: plotLeft, y: plotBottom + baseHeight };
+  const baseFBR = { x: plotRight, y: plotBottom + baseHeight };
+  const baseBTL = depthOffset(baseFTL);
+  const baseBTR = depthOffset(baseFTR);
+  const baseBBR = depthOffset(baseFBR);
 
-  // Fylt, gradientskyggelagt profil (én polygon per delstrekning) — lysere
-  // øverst, mørkere mot grunnlinja, for litt 3D-følelse.
+  poly([baseFTL, baseFTR, baseBTR, baseBTL], '#3a3a3a'); // toppflate
+  poly([baseFTL, baseFTR, baseFBR, baseFBL], '#1f1f1f'); // frontflate
+  poly([baseFTR, baseFBR, baseBBR, baseBTR], '#111');    // endeflate
+
+  // --- Terreng: frontflate per delstrekning ---
+  const frontPts = profile.map(p => ({ x: xFor(p.distKm), y: yFor(p.elevation) }));
   for (let i = 1; i < profile.length; i++) {
     const a = profile[i - 1], b = profile[i];
     const segKm = b.distKm - a.distKm;
     const grade = segKm > 0 ? Math.max(0, (b.elevation - a.elevation) / (segKm * 1000)) : 0;
-
-    const x1 = xFor(a.distKm), x2 = xFor(b.distKm);
-    const y1 = yFor(a.elevation), y2 = yFor(b.elevation);
-
-    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    poly.setAttribute('points', `${x1},${plotBottom} ${x1},${y1} ${x2},${y2} ${x2},${plotBottom}`);
-    poly.setAttribute('fill', `url(#loype-grade-gradient-${gradeBucketIndex(grade)})`);
-    terrainGroup.appendChild(poly);
+    const bucket = GRADE_BUCKETS[gradeBucketIndex(grade)];
+    poly(
+      [{ x: frontPts[i - 1].x, y: plotBottom }, frontPts[i - 1], frontPts[i], { x: frontPts[i].x, y: plotBottom }],
+      bucket.base
+    );
   }
 
-  // "Veien" du løper på, tegnet oppå profilen: en grå asfalt-stripe med en
-  // hvit stiplet midtlinje, som gir en følelse av å se selve underlaget.
-  const pointsAttr = profile.map(p => `${xFor(p.distKm).toFixed(1)},${yFor(p.elevation).toFixed(1)}`).join(' ');
+  // --- Terreng: toppflate (veien du løper på) per delstrekning ---
+  const backPts = frontPts.map(depthOffset);
+  for (let i = 1; i < profile.length; i++) {
+    const a = profile[i - 1], b = profile[i];
+    const segKm = b.distKm - a.distKm;
+    const grade = segKm > 0 ? Math.max(0, (b.elevation - a.elevation) / (segKm * 1000)) : 0;
+    const bucket = GRADE_BUCKETS[gradeBucketIndex(grade)];
+    poly([frontPts[i - 1], frontPts[i], backPts[i], backPts[i - 1]], bucket.light);
+  }
 
-  const roadBase = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-  roadBase.setAttribute('points', pointsAttr);
-  roadBase.setAttribute('fill', 'none');
-  roadBase.setAttribute('stroke', '#4a4a4a');
-  roadBase.setAttribute('stroke-width', '6');
-  roadBase.setAttribute('stroke-linejoin', 'round');
-  roadBase.setAttribute('stroke-linecap', 'round');
-  roadBase.setAttribute('filter', 'url(#loype-profile-shadow)');
-  terrainGroup.appendChild(roadBase);
+  // --- Terreng: endeflate helt til høyre, lukker den ekstruderte formen ---
+  const lastFront = frontPts[frontPts.length - 1];
+  const lastBase = { x: lastFront.x, y: plotBottom };
+  const lastBackFront = depthOffset(lastFront);
+  const lastBackBase = depthOffset(lastBase);
+  const lastGrade = profile.length > 1
+    ? Math.max(0, (profile[profile.length - 1].elevation - profile[profile.length - 2].elevation) /
+        Math.max((profile[profile.length - 1].distKm - profile[profile.length - 2].distKm) * 1000, 0.001))
+    : 0;
+  poly([lastBase, lastFront, lastBackFront, lastBackBase], GRADE_BUCKETS[gradeBucketIndex(lastGrade)].dark);
 
-  const roadCenterline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-  roadCenterline.setAttribute('points', pointsAttr);
-  roadCenterline.setAttribute('fill', 'none');
-  roadCenterline.setAttribute('stroke', '#fff');
-  roadCenterline.setAttribute('stroke-width', '1.5');
-  roadCenterline.setAttribute('stroke-dasharray', '6,6');
-  roadCenterline.setAttribute('stroke-linecap', 'round');
-  terrainGroup.appendChild(roadCenterline);
+  // --- Vei-midtlinje: hvit stiplet linje langs midten av toppflaten ---
+  const midPts = frontPts.map((p, i) => ({ x: (p.x + backPts[i].x) / 2, y: (p.y + backPts[i].y) / 2 }));
+  const roadLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  roadLine.setAttribute('points', midPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+  roadLine.setAttribute('fill', 'none');
+  roadLine.setAttribute('stroke', '#fff');
+  roadLine.setAttribute('stroke-width', '2');
+  roadLine.setAttribute('stroke-dasharray', '7,7');
+  roadLine.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(roadLine);
 
-  // Y-akse med noen få høydenivåer
-  const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  yAxis.setAttribute('x1', String(plotLeft));
-  yAxis.setAttribute('y1', String(plotTop));
-  yAxis.setAttribute('x2', String(plotLeft));
-  yAxis.setAttribute('y2', String(plotBottom));
-  yAxis.setAttribute('stroke', '#999');
-  svg.appendChild(yAxis);
+  // --- Høyderuler til høyre ---
+  const rulerTick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  rulerTick.setAttribute('x1', String(rulerX));
+  rulerTick.setAttribute('y1', String(plotTop));
+  rulerTick.setAttribute('x2', String(rulerX));
+  rulerTick.setAttribute('y2', String(plotBottom));
+  rulerTick.setAttribute('stroke', '#999');
+  svg.appendChild(rulerTick);
 
   const yTickCount = 4;
   for (let i = 0; i <= yTickCount; i++) {
     const value = min + (range * i) / yTickCount;
     const y = yFor(value);
     const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    tick.setAttribute('x1', String(plotLeft - 5));
+    tick.setAttribute('x1', String(rulerX));
     tick.setAttribute('y1', String(y));
-    tick.setAttribute('x2', String(plotLeft));
+    tick.setAttribute('x2', String(rulerX + 6));
     tick.setAttribute('y2', String(y));
     tick.setAttribute('stroke', '#999');
     svg.appendChild(tick);
 
     const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    label.setAttribute('x', String(plotLeft - 8));
+    label.setAttribute('x', String(rulerX + 10));
     label.setAttribute('y', String(y + 3));
-    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('text-anchor', 'start');
     label.setAttribute('font-size', '11');
     label.setAttribute('fill', '#5f6368');
     label.textContent = `${Math.round(value)} m`;
     svg.appendChild(label);
   }
 
-  // X-akse med kilometermarkeringer
-  const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  xAxis.setAttribute('x1', String(plotLeft));
-  xAxis.setAttribute('y1', String(plotBottom));
-  xAxis.setAttribute('x2', String(plotRight));
-  xAxis.setAttribute('y2', String(plotBottom));
-  xAxis.setAttribute('stroke', '#999');
-  svg.appendChild(xAxis);
-
+  // --- Distansemerker på den svarte sokkelen ---
   const xStepKm = totalKm > 5 ? 1 : (totalKm > 1 ? 0.5 : 0.1);
   for (let d = 0; d <= totalKm + 0.001; d += xStepKm) {
     const x = xFor(d);
-    const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    tick.setAttribute('x1', String(x));
-    tick.setAttribute('y1', String(plotBottom));
-    tick.setAttribute('x2', String(x));
-    tick.setAttribute('y2', String(plotBottom + 5));
-    tick.setAttribute('stroke', '#999');
-    svg.appendChild(tick);
-
     const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     label.setAttribute('x', String(x));
-    label.setAttribute('y', String(plotBottom + 18));
+    label.setAttribute('y', String(plotBottom + baseHeight - 6));
     label.setAttribute('text-anchor', 'middle');
     label.setAttribute('font-size', '11');
-    label.setAttribute('fill', '#5f6368');
+    label.setAttribute('fill', '#fff');
     label.textContent = `${d.toFixed(d < 1 ? 1 : 0)} km`;
     svg.appendChild(label);
   }
@@ -317,17 +275,12 @@ function addDetailLabel(profile, point, name) {
   const y = plotTop + (1 - (point.elevation - min) / range) * (plotBottom - plotTop);
   const xClamped = Math.min(Math.max(x, plotLeft + 5), plotRight - 5);
 
-  // Terrenget er vinklet (skewX), så punktet på selve profilen flytter seg
-  // vannrett avhengig av høyde — regn ut hvor det faktisk havner visuelt.
-  const skewTopX = skewedX(xClamped, y, plotBottom);
-  const skewBottomX = skewedX(xClamped, plotBottom, plotBottom);
-
-  // Stiplet linje fra grunnlinja opp til punktet, langs samme vinkel som
-  // terrenget, som i Tour de France-profiler.
+  // Stiplet linje fra grunnlinja opp til punktet, som i Tour de
+  // France-profiler.
   const connector = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  connector.setAttribute('x1', String(skewBottomX));
+  connector.setAttribute('x1', String(xClamped));
   connector.setAttribute('y1', String(plotBottom));
-  connector.setAttribute('x2', String(skewTopX));
+  connector.setAttribute('x2', String(xClamped));
   connector.setAttribute('y2', String(y));
   connector.setAttribute('stroke', '#666');
   connector.setAttribute('stroke-width', '1');
@@ -335,7 +288,7 @@ function addDetailLabel(profile, point, name) {
   svg.appendChild(connector);
 
   const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  dot.setAttribute('cx', String(skewTopX));
+  dot.setAttribute('cx', String(xClamped));
   dot.setAttribute('cy', String(y));
   dot.setAttribute('r', '4');
   dot.setAttribute('fill', '#1a1a2e');
@@ -343,7 +296,7 @@ function addDetailLabel(profile, point, name) {
 
   // Vertikal tekst som vokser oppover fra grunnlinja, like til venstre for
   // den stiplede linja — samme plassering som stedsnavnene i TdF-profiler.
-  const labelX = skewBottomX - 8;
+  const labelX = xClamped - 8;
   const labelY = plotBottom - 4;
   const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   label.setAttribute('x', String(labelX));
