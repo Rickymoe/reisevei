@@ -9,14 +9,17 @@ function onLoypeRouteClick(e) {
   addRoutePoint(e.latLng.lat(), e.latLng.lng());
 }
 
+let lastAddedIndex = -1;
+
 function addRoutePoint(lat, lng) {
   const pt = { lat, lng };
   routePoints.push(pt);
+  lastAddedIndex = routePoints.length - 1;
   redrawRoutePolyline();
   redrawRouteMarkers();
   updateLoypeControls();
   updateDistanceAndChart();
-  fetchAndStoreElevation(pt, routePoints.length - 1);
+  fetchAndStoreElevation(pt, lastAddedIndex);
 }
 
 function onLoypeRouteRightClick(e) {
@@ -37,6 +40,7 @@ function onLoypeRouteRightClick(e) {
   const pt = { lat, lng };
   routePoints.splice(insertIndex, 0, pt);
   routeElevations.splice(insertIndex, 0, undefined);
+  lastAddedIndex = insertIndex;
   redrawRoutePolyline();
   redrawRouteMarkers();
   updateLoypeControls();
@@ -103,8 +107,13 @@ function redrawRouteMarkers() {
 }
 
 function undoLastRoutePoint() {
-  routePoints.pop();
-  routeElevations.pop();
+  if (routePoints.length === 0) return;
+  const index = (lastAddedIndex >= 0 && lastAddedIndex < routePoints.length)
+    ? lastAddedIndex
+    : routePoints.length - 1;
+  routePoints.splice(index, 1);
+  routeElevations.splice(index, 1);
+  lastAddedIndex = -1;
   redrawRoutePolyline();
   redrawRouteMarkers();
   updateLoypeControls();
@@ -114,6 +123,7 @@ function undoLastRoutePoint() {
 function clearRoute() {
   routePoints = [];
   routeElevations = [];
+  lastAddedIndex = -1;
   redrawRoutePolyline();
   redrawRouteMarkers();
   updateLoypeControls();
