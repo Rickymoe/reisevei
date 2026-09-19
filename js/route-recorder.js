@@ -19,6 +19,8 @@ function addRoutePoint(lat, lng) {
   fetchAndStoreElevation(pt, routePoints.length - 1);
 }
 
+let myLocationMarker = null;
+
 function useMyLocationForRoute() {
   if (!navigator.geolocation) {
     showLoypeError('Enheten din støtter ikke geolokasjon.');
@@ -26,7 +28,7 @@ function useMyLocationForRoute() {
   }
   navigator.geolocation.getCurrentPosition(
     (pos) => {
-      addRoutePoint(pos.coords.latitude, pos.coords.longitude);
+      showMyLocationMarker(pos.coords.latitude, pos.coords.longitude);
       map.panTo({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       map.setZoom(16);
     },
@@ -34,6 +36,17 @@ function useMyLocationForRoute() {
       showLoypeError('Fikk ikke tilgang til posisjonen din.');
     }
   );
+}
+
+function showMyLocationMarker(lat, lng) {
+  if (myLocationMarker) myLocationMarker.map = null;
+  const dot = document.createElement('div');
+  dot.style.cssText = 'width:16px;height:16px;border-radius:50%;background:#4285f4;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)';
+  myLocationMarker = new google.maps.marker.AdvancedMarkerElement({
+    position: { lat, lng },
+    map,
+    content: dot,
+  });
 }
 
 function redrawRoutePolyline() {
@@ -85,6 +98,7 @@ function clearRoute() {
 function setLoypeMapVisible(visible) {
   if (routePolyline) routePolyline.setMap(visible ? map : null);
   routeMarkers.forEach(m => { m.map = visible ? map : null; });
+  if (myLocationMarker) myLocationMarker.map = visible ? map : null;
 }
 
 function updateLoypeControls() {
