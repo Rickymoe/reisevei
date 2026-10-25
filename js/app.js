@@ -42,14 +42,12 @@ function initMap() {
   setDefaultDepartureTime();
   initTransitToggle();
   liveBusLayer.initToggle();
-  liveFerryLayer.initToggle();
   busStopsLayer.init();
   bydelerLayer.init();
 }
 
 function refreshLiveVehiclesIfActive() {
   liveBusLayer.refreshIfActive();
-  liveFerryLayer.refreshIfActive();
 }
 
 function onMapClick(e) {
