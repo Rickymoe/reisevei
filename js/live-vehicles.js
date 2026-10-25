@@ -1,7 +1,5 @@
-// Shared engine behind the "Live buss" and "Live trikk" layers (js/live-buses.js,
-// js/live-trams.js). Both are thin config objects passed to
-// createLiveVehicleLayer() below — fetch/filter/cluster/render/poll logic
-// lives here once instead of being duplicated per vehicle mode.
+// Shared engine behind the "Live buss" layer (js/live-buses.js), a thin config
+// object passed to createLiveVehicleLayer() below. Kept generic over vehicle mode.
 
 const CLUSTER_CELL_PX = 50;
 

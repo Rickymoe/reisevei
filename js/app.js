@@ -42,13 +42,11 @@ function initMap() {
   setDefaultDepartureTime();
   initTransitToggle();
   liveBusLayer.initToggle();
-  liveTramLayer.initToggle();
   busStopsLayer.init();
 }
 
 function refreshLiveVehiclesIfActive() {
   liveBusLayer.refreshIfActive();
-  liveTramLayer.refreshIfActive();
 }
 
 function onMapClick(e) {
