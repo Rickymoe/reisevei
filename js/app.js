@@ -33,6 +33,8 @@ function initMap() {
     mapTypeId: 'roadmap',
     disableDefaultUI: false,
     clickableIcons: false,
+    zoomControlOptions: { position: google.maps.ControlPosition.LEFT_BOTTOM },
+    cameraControlOptions: { position: google.maps.ControlPosition.LEFT_BOTTOM },
     mapId: 'DEMO_MAP_ID',
   });
   geocoder = new google.maps.Geocoder();
