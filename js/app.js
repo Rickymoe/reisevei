@@ -17,12 +17,15 @@ let hoverMarker = null;
 let intersectionPolygons = [];
 let beregnGeneration = 0;
 
+function setPanelCollapsed(panelId, buttonId, collapsed) {
+  document.getElementById(panelId).classList.toggle('collapsed', collapsed);
+  document.getElementById(buttonId).textContent = collapsed ? '▸' : '▾';
+}
+
 function initPanelCollapse(panelId, buttonId) {
   const panel = document.getElementById(panelId);
-  const btn = document.getElementById(buttonId);
-  btn.addEventListener('click', () => {
-    const collapsed = panel.classList.toggle('collapsed');
-    btn.textContent = collapsed ? '▸' : '▾';
+  document.getElementById(buttonId).addEventListener('click', () => {
+    setPanelCollapsed(panelId, buttonId, !panel.classList.contains('collapsed'));
   });
 }
 
@@ -64,6 +67,7 @@ function onMapClick(e) {
   setPointCoords(pickingPointIndex, lat, lng);
   pickingPointIndex = null;
   document.getElementById('map').classList.remove('picking-mode');
+  setPanelCollapsed('panel', 'panel-collapse-btn', false);
 }
 
 function setPointCoords(index, lat, lng) {
