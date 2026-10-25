@@ -409,3 +409,29 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   box-shadow: 0 2px 8px rgba(0,0,0,.25);
   pointer-events: none;
 }
+
+.bydel-switch {
+  position: absolute;
+  right: 10px;
+  z-index: 10;
+  display: flex;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 50px;
+  padding: 3px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+.bydel-switch button {
+  border: none;
+  background: transparent;
+  border-radius: 50px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.bydel-switch button.active {
+  background: #1a73e8;
+  color: white;
+}
