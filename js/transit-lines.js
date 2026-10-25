@@ -3,25 +3,42 @@ const transitVisible = { tram: false, subway: false };
 
 let lineTooltip = null;
 
-function setLineHover(hoveredName, on) {
+const STRIPE_DASH_PX = 8;
+
+// Lines sharing a track are drawn as one invisible polyline carrying a repeating
+// dash in each line's colour, so every line stays visible instead of one hiding the rest.
+function stripeIcons(colors, weight) {
+  return colors.map((color, i) => ({
+    icon: { path: 'M 0,-1 0,1', strokeColor: color, strokeOpacity: 0.95, strokeWeight: weight, scale: STRIPE_DASH_PX / 2 },
+    offset: `${i * STRIPE_DASH_PX}px`,
+    repeat: `${colors.length * STRIPE_DASH_PX}px`,
+  }));
+}
+
+function setLineHover(hoveredNames, on) {
   for (const type of ['tram', 'subway']) {
     for (const p of transitPolylinesByType[type]) {
-      if (p.lineName === hoveredName) p.setOptions({ strokeWeight: on ? 6 : 3, strokeOpacity: on ? 1 : 0.85 });
+      if (p.stripeColors) {
+        if (p.lineNames.some(n => hoveredNames.includes(n))) p.setOptions({ icons: stripeIcons(p.stripeColors, on ? 6 : 3) });
+      } else if (hoveredNames.includes(p.lineName)) {
+        p.setOptions({ strokeWeight: on ? 6 : 3, strokeOpacity: on ? 1 : 0.85 });
+      }
     }
   }
 }
 
-function attachLineHover(polyline, name) {
-  polyline.lineName = name;
+function attachLineHover(polyline, label, names) {
+  polyline.lineName = names[0];
+  polyline.lineNames = names;
   polyline.addListener('mouseover', e => {
-    setLineHover(name, true);
-    lineTooltip.textContent = name;
+    setLineHover(names, true);
+    lineTooltip.textContent = label;
     lineTooltip.style.display = 'block';
     moveLineTooltip(e);
   });
   polyline.addListener('mousemove', moveLineTooltip);
   polyline.addListener('mouseout', () => {
-    setLineHover(name, false);
+    setLineHover(names, false);
     lineTooltip.style.display = 'none';
   });
   // A clickable polyline swallows map clicks, so hand them on (point picking)
@@ -44,7 +61,15 @@ async function loadTransitLines() {
       const routeType = f.properties.type;
       if (!transitPolylinesByType[routeType]) continue;
       const path = f.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-      const polyline = new google.maps.Polyline({
+      const shared = f.properties.shared;
+      const polyline = new google.maps.Polyline(shared ? {
+        path,
+        strokeOpacity: 0,
+        strokeWeight: 6,
+        icons: stripeIcons(f.properties.colors, 3),
+        map: null,
+        zIndex: 2,
+      } : {
         path,
         strokeColor: f.properties.color,
         strokeOpacity: 0.85,
@@ -52,7 +77,8 @@ async function loadTransitLines() {
         map: null,
         zIndex: 1,
       });
-      attachLineHover(polyline, f.properties.name);
+      if (shared) polyline.stripeColors = f.properties.colors;
+      attachLineHover(polyline, f.properties.name, shared ? f.properties.names : [f.properties.name]);
       transitPolylinesByType[routeType].push(polyline);
     }
     for (const type of ['tram', 'subway']) {
