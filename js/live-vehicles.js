@@ -10,6 +10,7 @@ const VEHICLES_QUERY = `
   query ($mode: VehicleModeEnumeration) {
     vehicles(mode: $mode) {
       vehicleId
+      serviceJourney { id }
       bearing
       destinationName
       line { publicCode }
@@ -126,7 +127,8 @@ function createLiveVehicleLayer(opts) {
     for (const v of perMode.flat()) {
       if (!v.location) continue;
       vehicles.push({
-        id: v.vehicleId,
+        // vehicleId alone is reused across trips; Entur's own map keys on both
+        id: `${v.vehicleId}|${v.serviceJourney?.id}`,
         lat: v.location.latitude,
         lng: v.location.longitude,
         bearing: typeof v.bearing === 'number' ? v.bearing : 0,
