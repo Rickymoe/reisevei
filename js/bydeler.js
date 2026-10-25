@@ -26,7 +26,8 @@ function createBydelerLayer() {
       return {
         fillColor: color,
         fillOpacity: 0.28,
-        strokeColor: color,
+        strokeColor: '#ffd600',
+        strokeOpacity: 1,
         strokeWeight: 2,
         clickable: false,
         zIndex: 0,
