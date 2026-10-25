@@ -1,6 +1,40 @@
 const transitPolylinesByType = { tram: [], subway: [] };
 const transitVisible = { tram: false, subway: false };
 
+let lineTooltip = null;
+
+function setLineHover(hoveredName, on) {
+  for (const type of ['tram', 'subway']) {
+    for (const p of transitPolylinesByType[type]) {
+      if (p.lineName === hoveredName) p.setOptions({ strokeWeight: on ? 6 : 3, strokeOpacity: on ? 1 : 0.85 });
+    }
+  }
+}
+
+function attachLineHover(polyline, name) {
+  polyline.lineName = name;
+  polyline.addListener('mouseover', e => {
+    setLineHover(name, true);
+    lineTooltip.textContent = name;
+    lineTooltip.style.display = 'block';
+    moveLineTooltip(e);
+  });
+  polyline.addListener('mousemove', moveLineTooltip);
+  polyline.addListener('mouseout', () => {
+    setLineHover(name, false);
+    lineTooltip.style.display = 'none';
+  });
+  // A clickable polyline swallows map clicks, so hand them on (point picking)
+  polyline.addListener('click', e => onMapClick(e));
+}
+
+function moveLineTooltip(e) {
+  const ev = e.domEvent;
+  if (!ev) return;
+  lineTooltip.style.left = `${ev.clientX + 12}px`;
+  lineTooltip.style.top = `${ev.clientY + 12}px`;
+}
+
 async function loadTransitLines() {
   try {
     const resp = await fetch('js/oslo-transit-lines.json');
@@ -10,14 +44,16 @@ async function loadTransitLines() {
       const routeType = f.properties.type;
       if (!transitPolylinesByType[routeType]) continue;
       const path = f.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-      transitPolylinesByType[routeType].push(new google.maps.Polyline({
+      const polyline = new google.maps.Polyline({
         path,
         strokeColor: f.properties.color,
         strokeOpacity: 0.85,
         strokeWeight: 3,
         map: null,
         zIndex: 1,
-      }));
+      });
+      attachLineHover(polyline, f.properties.name);
+      transitPolylinesByType[routeType].push(polyline);
     }
     for (const type of ['tram', 'subway']) {
       if (transitVisible[type]) transitPolylinesByType[type].forEach(p => p.setMap(map));
@@ -37,6 +73,10 @@ function setTypeVisible(type, visible) {
 }
 
 function initTransitToggle() {
+  lineTooltip = document.createElement('div');
+  lineTooltip.className = 'line-tooltip';
+  document.body.appendChild(lineTooltip);
+
   const tramBtn = document.createElement('button');
   tramBtn.id = 'tram-toggle-btn';
   tramBtn.className = 'transit-btn';
