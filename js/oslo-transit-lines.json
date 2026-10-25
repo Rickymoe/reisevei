@@ -55029,7 +55029,7 @@
         "line": "18",
         "type": "tram",
         "name": "Trikk 18",
-        "color": "#E87722"
+        "color": "#FCAC1C"
       },
       "geometry": {
         "type": "LineString",
@@ -58383,7 +58383,7 @@
         "line": "18",
         "type": "tram",
         "name": "Trikk 18",
-        "color": "#E87722"
+        "color": "#FCAC1C"
       },
       "geometry": {
         "type": "LineString",
@@ -58525,7 +58525,7 @@
         "line": "18",
         "type": "tram",
         "name": "Trikk 18",
-        "color": "#E87722"
+        "color": "#FCAC1C"
       },
       "geometry": {
         "type": "LineString",
@@ -61767,7 +61767,7 @@
         "line": "19",
         "type": "tram",
         "name": "Trikk 19",
-        "color": "#A3195B"
+        "color": "#50B448"
       },
       "geometry": {
         "type": "LineString",
@@ -69701,7 +69701,7 @@
         "line": "17",
         "type": "tram",
         "name": "Trikk 17",
-        "color": "#CC0066"
+        "color": "#EC2030"
       },
       "geometry": {
         "type": "LineString",
@@ -69843,7 +69843,7 @@
         "line": "17",
         "type": "tram",
         "name": "Trikk 17",
-        "color": "#CC0066"
+        "color": "#EC2030"
       },
       "geometry": {
         "type": "LineString",
@@ -73205,7 +73205,7 @@
         "line": "17",
         "type": "tram",
         "name": "Trikk 17",
-        "color": "#CC0066"
+        "color": "#EC2030"
       },
       "geometry": {
         "type": "LineString",
@@ -76599,7 +76599,7 @@
         "line": "13",
         "type": "tram",
         "name": "Trikk 13",
-        "color": "#FF6600"
+        "color": "#00A0DC"
       },
       "geometry": {
         "type": "LineString",
@@ -94489,7 +94489,7 @@
         "line": "12",
         "type": "tram",
         "name": "Trikk 12",
-        "color": "#E8000D"
+        "color": "#844898"
       },
       "geometry": {
         "type": "LineString",
@@ -94631,7 +94631,7 @@
         "line": "12",
         "type": "tram",
         "name": "Trikk 12",
-        "color": "#E8000D"
+        "color": "#844898"
       },
       "geometry": {
         "type": "LineString",
