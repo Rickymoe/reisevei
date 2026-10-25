@@ -3,7 +3,7 @@
 // (bydeler_2017 / NyeBydeler), saved as js/bydeler-na.json and js/bydeler-2028.json.
 // Each feature carries a pastel `color` chosen so that no two neighbouring bydeler share one.
 
-const BYDELER_BOTTOM_PX = 440;
+const BYDELER_ORDER = 1;
 
 function createBydelerLayer() {
   const sets = {
@@ -71,12 +71,9 @@ function createBydelerLayer() {
     btn.className = 'transit-btn';
     btn.innerHTML = '🗺️ Bydeler';
     btn.title = 'Vis/skjul Oslos bydeler';
-    btn.style.bottom = `${BYDELER_BOTTOM_PX}px`;
-    document.body.appendChild(btn);
 
     switchEl = document.createElement('div');
     switchEl.className = 'bydel-switch';
-    switchEl.style.bottom = `${BYDELER_BOTTOM_PX + 50}px`;
     switchEl.style.display = 'none';
     Object.entries(sets).forEach(([key, set]) => {
       const b = document.createElement('button');
@@ -90,7 +87,7 @@ function createBydelerLayer() {
       });
       switchEl.appendChild(b);
     });
-    document.body.appendChild(switchEl);
+    addLayerItem(BYDELER_ORDER, btn, switchEl);
 
     btn.addEventListener('click', () => {
       active = !active;

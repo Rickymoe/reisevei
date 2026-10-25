@@ -2,7 +2,7 @@
 // (stopPlacesByBbox). Only shown when zoomed in, so the marker count stays low.
 
 const BUS_STOPS_MIN_ZOOM = 14;
-const BUS_STOPS_BOTTOM_PX = 340;
+const BUS_STOPS_ORDER = 2;
 
 function createBusStopsLayer() {
   let active = false;
@@ -87,7 +87,6 @@ function createBusStopsLayer() {
     btn.className = 'transit-btn';
     btn.innerHTML = '🚏 Holdeplasser';
     btn.title = 'Vis/skjul bussholdeplasser i kartutsnittet';
-    btn.style.bottom = `${BUS_STOPS_BOTTOM_PX}px`;
     btn.addEventListener('click', () => {
       active = !active;
       btn.classList.toggle('active', active);
@@ -99,13 +98,10 @@ function createBusStopsLayer() {
         setStatus('');
       }
     });
-    document.body.appendChild(btn);
-
     status = document.createElement('div');
     status.className = 'live-vehicles-status';
-    status.style.bottom = `${BUS_STOPS_BOTTOM_PX + 45}px`;
     status.style.display = 'none';
-    document.body.appendChild(status);
+    addLayerItem(BUS_STOPS_ORDER, btn, status);
 
     map.addListener('idle', refresh);
   }

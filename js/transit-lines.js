@@ -86,8 +86,8 @@ async function loadTransitLines() {
     }
   } catch (err) {
     console.error('Kunne ikke laste kollektivlinjer:', err);
-    document.getElementById('tram-toggle-btn')?.remove();
-    document.getElementById('subway-toggle-btn')?.remove();
+    document.getElementById('tram-toggle-btn')?.parentElement.remove();
+    document.getElementById('subway-toggle-btn')?.parentElement.remove();
   }
 }
 
@@ -109,7 +109,7 @@ function initTransitToggle() {
   tramBtn.innerHTML = '🚋 Trikk';
   tramBtn.title = 'Vis/skjul trikkelinjer';
   tramBtn.addEventListener('click', () => setTypeVisible('tram', !transitVisible.tram));
-  document.body.appendChild(tramBtn);
+  addLayerItem(5, tramBtn);
 
   const subwayBtn = document.createElement('button');
   subwayBtn.id = 'subway-toggle-btn';
@@ -117,7 +117,7 @@ function initTransitToggle() {
   subwayBtn.innerHTML = '🚇 T-bane';
   subwayBtn.title = 'Vis/skjul T-banelinjer';
   subwayBtn.addEventListener('click', () => setTypeVisible('subway', !transitVisible.subway));
-  document.body.appendChild(subwayBtn);
+  addLayerItem(6, subwayBtn);
 
   loadTransitLines();
 }

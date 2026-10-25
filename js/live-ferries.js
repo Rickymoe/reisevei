@@ -7,7 +7,7 @@ const liveFerryLayer = createLiveVehicleLayer({
   statusId: 'live-ferries-status',
   buttonLabel: '⛴️ Live ferge',
   buttonTitle: 'Vis/skjul sanntidsferger i kartutsnittet',
-  bottomPx: 240,
+  order: 3,
   noun: 'ferger',
   nounPlural: 'ferger',
 });

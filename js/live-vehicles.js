@@ -98,7 +98,7 @@ function vehicleIcon(bearing, line, color) {
 }
 
 // opts: { mode, endpoint, pollMs, iconColor, clusterColor, buttonId, statusId,
-//         buttonLabel, buttonTitle, bottomPx, noun, nounPlural }
+//         buttonLabel, buttonTitle, order, noun, nounPlural }
 function createLiveVehicleLayer(opts) {
   let active = false;
   let pollTimer = null;
@@ -252,7 +252,6 @@ function createLiveVehicleLayer(opts) {
     btn.className = 'transit-btn';
     btn.innerHTML = opts.buttonLabel;
     btn.title = opts.buttonTitle;
-    btn.style.bottom = `${opts.bottomPx}px`;
     btn.addEventListener('click', () => {
       active = !active;
       btn.classList.toggle('active', active);
@@ -263,14 +262,11 @@ function createLiveVehicleLayer(opts) {
         updateStatus();
       }
     });
-    document.body.appendChild(btn);
-
     const status = document.createElement('div');
     status.id = opts.statusId;
     status.className = 'live-vehicles-status';
-    status.style.bottom = `${opts.bottomPx + 45}px`;
     status.style.display = 'none';
-    document.body.appendChild(status);
+    addLayerItem(opts.order, btn, status);
 
     // Re-cluster/redraw once panning or zooming settles, without waiting
     // for the next poll — rendering is purely a function of current map

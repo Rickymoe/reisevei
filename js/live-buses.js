@@ -7,7 +7,7 @@ const liveBusLayer = createLiveVehicleLayer({
   statusId: 'live-buses-status',
   buttonLabel: '🚌 Live buss',
   buttonTitle: 'Vis/skjul sanntidsbusser i kartutsnittet',
-  bottomPx: 140,
+  order: 4,
   noun: 'busser',
   nounPlural: 'busser',
 });
