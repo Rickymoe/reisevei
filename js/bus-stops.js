@@ -2,7 +2,7 @@
 // (stopPlacesByBbox). Only shown when zoomed in, so the marker count stays low.
 
 const BUS_STOPS_MIN_ZOOM = 14;
-const BUS_STOPS_BOTTOM_PX = 240;
+const BUS_STOPS_BOTTOM_PX = 340;
 
 function createBusStopsLayer() {
   let active = false;

@@ -1,5 +1,5 @@
-// Shared engine behind the "Live buss" layer (js/live-buses.js), a thin config
-// object passed to createLiveVehicleLayer() below. Kept generic over vehicle mode.
+// Shared engine behind the "Live buss" and "Live ferge" layers (js/live-buses.js,
+// js/live-ferries.js), thin config objects passed to createLiveVehicleLayer() below. Kept generic over vehicle mode.
 
 const CLUSTER_CELL_PX = 50;
 

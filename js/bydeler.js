@@ -2,7 +2,7 @@
 // 1 Jan 2028. Boundaries come from Oslo kommune's own map layers
 // (bydeler_2017 / NyeBydeler), saved as js/bydeler-na.json and js/bydeler-2028.json.
 
-const BYDELER_BOTTOM_PX = 340;
+const BYDELER_BOTTOM_PX = 440;
 
 const BYDEL_COLORS = {
   'Vestre Aker': '#f08a80', 'Gamle Aker': '#8e8bb0', 'Frysja': '#b3a08f',
