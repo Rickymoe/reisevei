@@ -118,7 +118,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
 .panel-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
 }
@@ -148,13 +148,16 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 }
 
 .panel-collapse-btn {
-  background: none;
+  background: #f1f3f4;
   border: none;
-  font-size: 16px;
+  border-radius: 8px;
+  font-size: 20px;
   line-height: 1;
-  color: #888;
+  color: #555;
   cursor: pointer;
-  padding: 2px 4px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
   flex-shrink: 0;
 }
 
@@ -368,7 +371,6 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   }
 
   .remove-btn,
-  .panel-collapse-btn,
   #result-panel .close-btn,
   #info-panel .close-btn {
     min-width: 32px;
