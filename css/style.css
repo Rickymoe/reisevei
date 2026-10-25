@@ -505,3 +505,5 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 }
 
 .field-group input::-webkit-date-and-time-value { text-align: center; }
+
+#panel.collapsed .panel-header { margin-bottom: 0; }
