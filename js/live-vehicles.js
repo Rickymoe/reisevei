@@ -4,7 +4,7 @@
 const CLUSTER_CELL_PX = 50;
 
 // Same API as vehicle-map.entur.org. One request per mode for the whole
-// country (~600 buses); panning only re-filters, it never refetches.
+// country (~600 vehicles); panning only re-filters, it never refetches.
 const ENTUR_VEHICLES_ENDPOINT = 'https://api.entur.io/realtime/v2/vehicles/graphql';
 const VEHICLES_QUERY = `
   query ($mode: VehicleModeEnumeration) {
@@ -105,21 +105,25 @@ function createLiveVehicleLayer(opts) {
   let lastFetched = [];
   let lastFetchFailed = false;
 
-  async function fetchVehicles() {
+  async function fetchMode(mode) {
     const resp = await fetch(ENTUR_VEHICLES_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Et-Client-Name': ENTUR_CLIENT_NAME,
       },
-      body: JSON.stringify({ query: VEHICLES_QUERY, variables: { mode: opts.mode } }),
+      body: JSON.stringify({ query: VEHICLES_QUERY, variables: { mode } }),
     });
     if (!resp.ok) throw new Error(`Entur vehicles HTTP ${resp.status}`);
     const json = await resp.json();
     if (json.errors) throw new Error(`Entur vehicles: ${json.errors[0].message}`);
+    return json.data.vehicles;
+  }
 
+  async function fetchVehicles() {
+    const perMode = await Promise.all(opts.modes.map(fetchMode));
     const vehicles = [];
-    for (const v of json.data.vehicles) {
+    for (const v of perMode.flat()) {
       if (!v.location) continue;
       vehicles.push({
         id: v.vehicleId,

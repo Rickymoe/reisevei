@@ -1,5 +1,5 @@
 const liveBusLayer = createLiveVehicleLayer({
-  mode: 'BUS',
+  modes: ['BUS', 'COACH'],
   pollMs: 20000,
   iconColor: '#fbbc04',
   clusterColor: '#1a73e8',
