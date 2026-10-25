@@ -43,6 +43,7 @@ function initMap() {
   initTransitToggle();
   liveBusLayer.initToggle();
   liveTramLayer.initToggle();
+  busStopsLayer.init();
 }
 
 function refreshLiveVehiclesIfActive() {

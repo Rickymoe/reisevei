@@ -5,6 +5,21 @@
 
 const CLUSTER_CELL_PX = 50;
 
+// Same API as vehicle-map.entur.org. One request per mode for the whole
+// country (~600 buses); panning only re-filters, it never refetches.
+const ENTUR_VEHICLES_ENDPOINT = 'https://api.entur.io/realtime/v2/vehicles/graphql';
+const VEHICLES_QUERY = `
+  query ($mode: VehicleModeEnumeration) {
+    vehicles(mode: $mode) {
+      vehicleId
+      bearing
+      destinationName
+      line { publicCode }
+      location { latitude longitude }
+    }
+  }
+`;
+
 // Standalone from any isochrone/point state — shows whatever's on screen,
 // not vehicles inside a computed travel-time zone.
 function filterToMapBounds(vehicles) {
@@ -93,31 +108,28 @@ function createLiveVehicleLayer(opts) {
   let lastFetchFailed = false;
 
   async function fetchVehicles() {
-    const resp = await fetch(opts.endpoint, {
+    const resp = await fetch(ENTUR_VEHICLES_ENDPOINT, {
+      method: 'POST',
       headers: {
-        'Accept': 'application/json',
-        'ET-Client-Name': ENTUR_CLIENT_NAME,
+        'Content-Type': 'application/json',
+        'Et-Client-Name': ENTUR_CLIENT_NAME,
       },
+      body: JSON.stringify({ query: VEHICLES_QUERY, variables: { mode: opts.mode } }),
     });
-    if (!resp.ok) throw new Error(`Entur VM HTTP ${resp.status}`);
+    if (!resp.ok) throw new Error(`Entur vehicles HTTP ${resp.status}`);
     const json = await resp.json();
-    const deliveries = json.Siri?.ServiceDelivery?.VehicleMonitoringDelivery;
-    const activities = deliveries?.[0]?.VehicleActivity || [];
+    if (json.errors) throw new Error(`Entur vehicles: ${json.errors[0].message}`);
 
     const vehicles = [];
-    for (const activity of activities) {
-      const mvj = activity.MonitoredVehicleJourney;
-      if (!mvj || !mvj.VehicleMode || !mvj.VehicleMode.includes(opts.mode)) continue;
-      const loc = mvj.VehicleLocation;
-      const vehicleRef = mvj.VehicleRef?.value;
-      if (!loc || vehicleRef === undefined) continue;
+    for (const v of json.data.vehicles) {
+      if (!v.location) continue;
       vehicles.push({
-        id: vehicleRef,
-        lat: loc.Latitude,
-        lng: loc.Longitude,
-        bearing: typeof mvj.Bearing === 'number' ? mvj.Bearing : 0,
-        line: mvj.PublishedLineName?.[0]?.value || '?',
-        destination: mvj.DestinationName?.[0]?.value || '',
+        id: v.vehicleId,
+        lat: v.location.latitude,
+        lng: v.location.longitude,
+        bearing: typeof v.bearing === 'number' ? v.bearing : 0,
+        line: v.line?.publicCode || '?',
+        destination: v.destinationName || '',
       });
     }
     return vehicles;

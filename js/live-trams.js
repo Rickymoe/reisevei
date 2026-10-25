@@ -1,6 +1,5 @@
 const liveTramLayer = createLiveVehicleLayer({
-  mode: 'tram',
-  endpoint: 'https://api.entur.io/realtime/v1/rest/vm?maxSize=10000',
+  mode: 'TRAM',
   pollMs: 20000,
   iconColor: '#f06292',
   clusterColor: '#c2185b',
