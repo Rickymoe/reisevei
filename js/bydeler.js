@@ -1,18 +1,9 @@
 // "Bydeler" layer: Oslo's current 15 bydeler and the 8 new ones from
 // 1 Jan 2028. Boundaries come from Oslo kommune's own map layers
 // (bydeler_2017 / NyeBydeler), saved as js/bydeler-na.json and js/bydeler-2028.json.
+// Each feature carries a pastel `color` chosen so that no two neighbouring bydeler share one.
 
 const BYDELER_BOTTOM_PX = 440;
-
-const BYDEL_COLORS = {
-  'Vestre Aker': '#f08a80', 'Gamle Aker': '#8e8bb0', 'Frysja': '#b3a08f',
-  'Hovin': '#f4a6b4', 'Øvre Groruddalen': '#6cc6ee', 'Gamle Oslo': '#f6c04d',
-  'Østensjø': '#a5db8c', 'Nordstrand': '#2fcf7a',
-  'Ullern': '#f2a07b', 'Frogner': '#c7a0d9', 'St. Hanshaugen': '#d9b36c',
-  'Sagene': '#9fb7e0', 'Nordre Aker': '#7fc4b0', 'Grünerløkka': '#e98aa8',
-  'Bjerke': '#e8c46a', 'Grorud': '#80c3e8', 'Stovner': '#9ad0f0',
-  'Alna': '#f0b0a0', 'Søndre Nordstrand': '#6fdc9f',
-};
 
 function createBydelerLayer() {
   const sets = {
@@ -31,7 +22,7 @@ function createBydelerLayer() {
     set.data = new google.maps.Data();
     set.data.addGeoJson(geojson);
     set.data.setStyle(f => {
-      const color = BYDEL_COLORS[f.getProperty('name')] || '#999';
+      const color = f.getProperty('color') || '#999';
       return {
         fillColor: color,
         fillOpacity: 0.28,
